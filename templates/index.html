@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>T2T — Training Intelligence Platform</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+</head>
+<body>
+
+  <!-- ── SIDEBAR ── -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="logo">
+        <span class="logo-mark">T2T</span>
+        <span class="logo-sub">Training Intelligence</span>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <p class="sidebar-label">MODE</p>
+      <div class="mode-buttons">
+        <button class="mode-btn active" data-mode="chat" title="Conversational consulting, coaching, and Q&A">
+          <span class="mode-icon">💬</span>
+          <span>Chat</span>
+        </button>
+        <button class="mode-btn" data-mode="document" title="Generate full lesson plans, TNA reports, proposals, and more">
+          <span class="mode-icon">📄</span>
+          <span>Document</span>
+        </button>
+        <button class="mode-btn" data-mode="research" title="Live web research to support your work">
+          <span class="mode-icon">🔍</span>
+          <span>Research</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="sidebar-section mode-desc-section">
+      <p class="mode-description" id="modeDescription">
+        Ask anything — consulting advice, career guidance, framework explanations, or coaching.
+      </p>
+    </div>
+
+    <div class="sidebar-section">
+      <p class="sidebar-label">QUICK STARTERS</p>
+      <div class="starters">
+        <button class="starter-btn" data-prompt="I need to conduct a Training Needs Analysis for a client. Help me build an interview protocol for their leadership team.">TNA Interview Protocol</button>
+        <button class="starter-btn" data-prompt="Convert this idea into a fully structured lesson plan: ">Lesson Plan Builder</button>
+        <button class="starter-btn" data-prompt="I have an RFP I need to respond to. Let's start with a structured analysis to identify gaps and build a winning response.">RFP Response</button>
+        <button class="starter-btn" data-prompt="I'm an educator transitioning into corporate L&D. Help me map my transferable skills and design my first 90-day career transition plan.">Career Transition Plan</button>
+        <button class="starter-btn" data-prompt="Design a Kirkpatrick Level 1–4 evaluation framework for a leadership development programme.">Evaluation Framework</button>
+        <button class="starter-btn" data-prompt="I want to build a blended learning curriculum. My topic is: ">Curriculum Design</button>
+      </div>
+    </div>
+
+    <div class="sidebar-footer">
+      <button class="clear-btn" id="clearBtn">
+        <span>↺</span> New Conversation
+      </button>
+    </div>
+  </aside>
+
+  <!-- ── MAIN AREA ── -->
+  <main class="main">
+
+    <!-- Top bar -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <span class="current-mode-badge" id="currentModeBadge">💬 Chat Mode</span>
+      </div>
+      <div class="topbar-right">
+        <button class="export-btn" id="exportBtn" title="Export conversation as Markdown">⬇ Export</button>
+      </div>
+    </header>
+
+    <!-- Messages -->
+    <div class="messages" id="messages">
+      <div class="welcome-screen" id="welcomeScreen">
+        <div class="welcome-logo">T2T</div>
+        <h1 class="welcome-title">Training Intelligence Platform</h1>
+        <p class="welcome-sub">Expert consulting, instructional design, curriculum architecture, and career strategy — powered by AI.</p>
+        <div class="welcome-chips">
+          <span class="chip">Training Needs Analysis</span>
+          <span class="chip">Lesson Plans</span>
+          <span class="chip">RFP Responses</span>
+          <span class="chip">Career Transition</span>
+          <span class="chip">Facilitation Design</span>
+          <span class="chip">Kirkpatrick ROI</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Thinking indicator -->
+    <div class="thinking" id="thinking" style="display:none;">
+      <div class="thinking-dots">
+        <span></span><span></span><span></span>
+      </div>
+      <span class="thinking-label" id="thinkingLabel">T2T is thinking…</span>
+    </div>
+
+    <!-- Input area -->
+    <div class="input-area">
+      <div class="input-wrapper">
+        <textarea
+          id="userInput"
+          class="user-input"
+          placeholder="Ask T2T anything…"
+          rows="1"
+          autocomplete="off"
+        ></textarea>
+        <button class="send-btn" id="sendBtn" disabled>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <line x1="22" y1="2" x2="11" y2="13"></line>
+            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+          </svg>
+        </button>
+      </div>
+      <p class="input-hint">T2T is an AI tool — always review outputs before sharing with clients.</p>
+    </div>
+
+  </main>
+
+  <!-- marked.js for markdown rendering -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>
