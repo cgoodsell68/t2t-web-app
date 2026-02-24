@@ -19,8 +19,9 @@ const thinkingLabels = {
 };
 
 let currentMode     = 'chat';
-let currentThreadId = null;   // null = start a fresh thread on next message
+let currentThreadId = null;
 let isLoading       = false;
+let currentUser     = null;
 
 // ── Elements ──
 const messagesEl       = document.getElementById('messages');
@@ -38,6 +39,169 @@ const threadTitleEl    = document.getElementById('currentThreadTitle');
 const sidebarEl        = document.getElementById('sidebar');
 const overlayEl        = document.getElementById('sidebarOverlay');
 const hamburgerEl      = document.getElementById('hamburger');
+const mainAppEl        = document.getElementById('mainApp');
+const authOverlayEl    = document.getElementById('authOverlay');
+const userNameEl       = document.getElementById('userNameDisplay');
+const logoutBtn        = document.getElementById('logoutBtn');
+
+// ── Auth: Login / Signup Panels ──
+const loginPanel    = document.getElementById('loginPanel');
+const signupPanel   = document.getElementById('signupPanel');
+const loginEmailEl  = document.getElementById('loginEmail');
+const loginPassEl   = document.getElementById('loginPassword');
+const loginBtn      = document.getElementById('loginBtn');
+const loginErrorEl  = document.getElementById('loginError');
+const signupNameEl  = document.getElementById('signupName');
+const signupEmailEl = document.getElementById('signupEmail');
+const signupPhoneEl = document.getElementById('signupPhone');
+const signupPassEl  = document.getElementById('signupPassword');
+const signupBtn     = document.getElementById('signupBtn');
+const signupErrorEl = document.getElementById('signupError');
+
+// Toggle between login and signup panels
+document.getElementById('showSignup').addEventListener('click', (e) => {
+  e.preventDefault();
+  loginPanel.style.display  = 'none';
+  signupPanel.style.display = 'block';
+  loginErrorEl.style.display = 'none';
+});
+
+document.getElementById('showLogin').addEventListener('click', (e) => {
+  e.preventDefault();
+  signupPanel.style.display = 'none';
+  loginPanel.style.display  = 'block';
+  signupErrorEl.style.display = 'none';
+});
+
+// ── Auth: Show / Hide Screens ──
+function showApp(user) {
+  currentUser = user;
+  authOverlayEl.style.display = 'none';
+  mainAppEl.style.display     = 'flex';
+  userNameEl.textContent      = user.name || user.email;
+  loadThreads();
+}
+
+function showAuth() {
+  mainAppEl.style.display     = 'none';
+  authOverlayEl.style.display = 'flex';
+  currentUser = null;
+}
+
+function showAuthError(el, msg) {
+  el.textContent    = msg;
+  el.style.display  = 'block';
+}
+
+// ── Auth: Login ──
+loginBtn.addEventListener('click', handleLogin);
+loginPassEl.addEventListener('keydown', (e) => { if (e.key === 'Enter') handleLogin(); });
+loginEmailEl.addEventListener('keydown', (e) => { if (e.key === 'Enter') loginPassEl.focus(); });
+
+async function handleLogin() {
+  const email    = loginEmailEl.value.trim();
+  const password = loginPassEl.value;
+  if (!email || !password) {
+    showAuthError(loginErrorEl, 'Please enter your email and password.');
+    return;
+  }
+  loginErrorEl.style.display = 'none';
+  loginBtn.disabled = true;
+  loginBtn.textContent = 'Signing in…';
+
+  try {
+    const res  = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      showApp(data.user);
+    } else if (data.needs_signup) {
+      // Pre-fill email and switch to signup
+      signupEmailEl.value = email;
+      signupPanel.style.display = 'block';
+      loginPanel.style.display  = 'none';
+      showAuthError(signupErrorEl, data.error);
+    } else {
+      showAuthError(loginErrorEl, data.error || 'Login failed. Please try again.');
+    }
+  } catch {
+    showAuthError(loginErrorEl, 'Network error — please try again.');
+  } finally {
+    loginBtn.disabled = false;
+    loginBtn.textContent = 'Sign In';
+  }
+}
+
+// ── Auth: Signup ──
+signupBtn.addEventListener('click', handleSignup);
+signupPassEl.addEventListener('keydown', (e) => { if (e.key === 'Enter') handleSignup(); });
+
+async function handleSignup() {
+  const name     = signupNameEl.value.trim();
+  const email    = signupEmailEl.value.trim();
+  const phone    = signupPhoneEl.value.trim();
+  const password = signupPassEl.value;
+
+  if (!name || !email || !password) {
+    showAuthError(signupErrorEl, 'Please fill in all required fields.');
+    return;
+  }
+  signupErrorEl.style.display = 'none';
+  signupBtn.disabled = true;
+  signupBtn.textContent = 'Creating account…';
+
+  try {
+    const res  = await fetch('/api/auth/signup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, email, phone, password }),
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      showApp(data.user);
+    } else {
+      showAuthError(signupErrorEl, data.error || 'Sign-up failed. Please try again.');
+    }
+  } catch {
+    showAuthError(signupErrorEl, 'Network error — please try again.');
+  } finally {
+    signupBtn.disabled = false;
+    signupBtn.textContent = 'Create Account';
+  }
+}
+
+// ── Auth: Logout ──
+logoutBtn.addEventListener('click', async () => {
+  await fetch('/api/auth/logout', { method: 'POST' });
+  startNewConversation();
+  showAuth();
+  // Reset login form
+  loginEmailEl.value = '';
+  loginPassEl.value  = '';
+  loginErrorEl.style.display = 'none';
+  loginPanel.style.display   = 'block';
+  signupPanel.style.display  = 'none';
+});
+
+// ── Auth: Check session on load ──
+async function initAuth() {
+  try {
+    const res  = await fetch('/api/auth/me');
+    const data = await res.json();
+    if (data.user) {
+      showApp(data.user);
+    } else {
+      showAuth();
+    }
+  } catch {
+    showAuth();
+  }
+}
 
 // ── Hamburger / Sidebar Toggle ──
 function openSidebar()  { sidebarEl.classList.add('open');    overlayEl.classList.add('active'); }
@@ -47,7 +211,6 @@ function toggleSidebar() { sidebarEl.classList.contains('open') ? closeSidebar()
 hamburgerEl.addEventListener('click', toggleSidebar);
 overlayEl.addEventListener('click', closeSidebar);
 
-// Close sidebar when a mode button, starter, or thread is clicked (mobile UX)
 document.querySelectorAll('.mode-btn, .starter-btn').forEach(el => {
   el.addEventListener('click', () => { if (window.innerWidth <= 768) closeSidebar(); });
 });
@@ -160,14 +323,20 @@ async function sendMessage() {
       }),
     });
 
+    // Handle auth expiry
+    if (res.status === 401) {
+      showAuth();
+      addMessage('assistant', '⚠️ Your session expired — please sign in again.', currentMode);
+      setLoading(false);
+      return;
+    }
+
     const data = await res.json();
 
     if (data.success) {
-      // Update thread tracking
       if (!currentThreadId) {
         currentThreadId = data.thread_id;
       }
-      // Refresh thread list and highlight active thread
       await loadThreads();
       updateActiveThread(currentThreadId);
       if (data.thread) {
@@ -224,6 +393,7 @@ function addMessage(role, text, mode) {
 async function loadThreads() {
   try {
     const res     = await fetch('/api/threads');
+    if (res.status === 401) return; // not logged in yet
     const data    = await res.json();
     const threads = data.threads || [];
 
@@ -321,4 +491,4 @@ function scrollToBottom() {
 }
 
 // ── Init ──
-loadThreads();
+initAuth();

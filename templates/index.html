@@ -10,6 +10,81 @@
 </head>
 <body>
 
+  <!-- ══════════════════════════════════════════ -->
+  <!-- AUTH SCREEN (shown when not logged in)    -->
+  <!-- ══════════════════════════════════════════ -->
+  <div class="auth-overlay" id="authOverlay">
+    <div class="auth-card">
+
+      <!-- Logo -->
+      <div class="auth-logo">
+        <span class="auth-logo-mark">T2T</span>
+        <span class="auth-logo-sub">Training Intelligence Platform</span>
+      </div>
+
+      <!-- ── LOGIN PANEL ── -->
+      <div class="auth-panel" id="loginPanel">
+        <h2 class="auth-title">Welcome back</h2>
+        <p class="auth-subtitle">Sign in to your T2T account</p>
+
+        <div class="auth-error" id="loginError" style="display:none;"></div>
+
+        <div class="auth-field">
+          <label for="loginEmail">Email</label>
+          <input type="email" id="loginEmail" placeholder="you@example.com" autocomplete="email" />
+        </div>
+        <div class="auth-field">
+          <label for="loginPassword">Password</label>
+          <input type="password" id="loginPassword" placeholder="Your password" autocomplete="current-password" />
+        </div>
+
+        <button class="auth-btn" id="loginBtn">Sign In</button>
+
+        <p class="auth-switch">
+          Don't have an account?
+          <a href="#" id="showSignup">Create one</a>
+        </p>
+      </div>
+
+      <!-- ── SIGNUP PANEL ── -->
+      <div class="auth-panel" id="signupPanel" style="display:none;">
+        <h2 class="auth-title">Create your account</h2>
+        <p class="auth-subtitle">Join T2T — free to get started</p>
+
+        <div class="auth-error" id="signupError" style="display:none;"></div>
+
+        <div class="auth-field">
+          <label for="signupName">Full Name</label>
+          <input type="text" id="signupName" placeholder="Jane Smith" autocomplete="name" />
+        </div>
+        <div class="auth-field">
+          <label for="signupEmail">Email</label>
+          <input type="email" id="signupEmail" placeholder="you@example.com" autocomplete="email" />
+        </div>
+        <div class="auth-field">
+          <label for="signupPhone">Phone <span class="auth-optional">(optional)</span></label>
+          <input type="tel" id="signupPhone" placeholder="+1 555 000 0000" autocomplete="tel" />
+        </div>
+        <div class="auth-field">
+          <label for="signupPassword">Password</label>
+          <input type="password" id="signupPassword" placeholder="At least 6 characters" autocomplete="new-password" />
+        </div>
+
+        <button class="auth-btn" id="signupBtn">Create Account</button>
+
+        <p class="auth-switch">
+          Already have an account?
+          <a href="#" id="showLogin">Sign in</a>
+        </p>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════ -->
+  <!-- MAIN APP (shown after login)              -->
+  <!-- ══════════════════════════════════════════ -->
+
   <!-- ── SIDEBAR OVERLAY (mobile) ── -->
   <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
@@ -70,11 +145,16 @@
       <button class="clear-btn" id="clearBtn">
         <span>↺</span> New Conversation
       </button>
+      <!-- User info + logout -->
+      <div class="user-info" id="userInfo">
+        <span class="user-name" id="userNameDisplay"></span>
+        <button class="logout-btn" id="logoutBtn" title="Sign out">Sign out</button>
+      </div>
     </div>
   </aside>
 
   <!-- ── MAIN AREA ── -->
-  <main class="main">
+  <main class="main" id="mainApp" style="display:none;">
 
     <!-- Top bar -->
     <header class="topbar">
