@@ -19,7 +19,8 @@ def add_headers(response):
     # Allow embedding in GHL pages (use CSP frame-ancestors instead of X-Frame-Options)
     response.headers['Content-Security-Policy'] = (
         "frame-ancestors 'self' https://*.gohighlevel.com https://*.leadconnectorhq.com "
-        "https://*.myclients.io https://*.highlevel.com https://*.gohighlevelpages.com"
+        "https://*.myclients.io https://*.highlevel.com https://*.gohighlevelpages.com "
+        "https://teacher2trainer.com https://*.teacher2trainer.com"
     )
     # Remove X-Frame-Options so it doesn't override CSP
     response.headers.pop('X-Frame-Options', None)
