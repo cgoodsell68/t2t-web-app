@@ -517,6 +517,11 @@ def index():
     return render_template('index.html')
 
 
+@app.route('/career-clarity')
+def career_clarity_landing():
+    return render_template('career_clarity_landing.html')
+
+
 # ─────────────────────────────────────────────
 #  ROUTES — AUTH
 # ─────────────────────────────────────────────
