@@ -4,18 +4,21 @@ const modeDescriptions = {
   chat:     'Ask anything — consulting advice, career guidance, framework explanations, or coaching.',
   document: 'Describe what you need and T2T will generate a complete, professional deliverable.',
   research: 'T2T searches the web in real time to support your query with current evidence.',
+  career:   '8 guided questions → your personalised LinkedIn plan and 90-day career roadmap.',
 };
 
 const modeBadges = {
   chat:     '💬 Chat Mode',
   document: '📄 Document Mode',
   research: '🔍 Research Mode',
+  career:   '🎯 Career Clarity',
 };
 
 const thinkingLabels = {
   chat:     'T2T is thinking…',
   document: 'Generating your document…',
   research: 'Searching the web…',
+  career:   'Your coach is thinking…',
 };
 
 let currentMode     = 'chat';
@@ -273,13 +276,27 @@ document.querySelectorAll('.mode-btn, .starter-btn').forEach(el => {
 marked.setOptions({ breaks: true, gfm: true });
 
 // ── Mode Switching ──
+function setMode(mode) {
+  if (mode === 'career') {
+    showCareerHook();
+    return;
+  }
+  setActiveMode(mode);
+  showCareerProgress(false);
+}
+
+function setActiveMode(mode) {
+  currentMode = mode;
+  document.querySelectorAll('.mode-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.mode === mode);
+  });
+  modeBadgeEl.textContent = modeBadges[mode] || mode;
+  modeDescEl.textContent  = modeDescriptions[mode] || '';
+}
+
 document.querySelectorAll('.mode-btn').forEach(btn => {
   btn.addEventListener('click', () => {
-    document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    currentMode = btn.dataset.mode;
-    modeBadgeEl.textContent = modeBadges[currentMode];
-    modeDescEl.textContent  = modeDescriptions[currentMode];
+    setMode(btn.dataset.mode);
   });
 });
 
@@ -327,6 +344,7 @@ function startNewConversation() {
   welcomeEl.style.display = 'flex';
   threadTitleEl.textContent = '';
   document.querySelectorAll('.thread-item').forEach(el => el.classList.remove('active'));
+  showCareerProgress(false);
 }
 
 // ── Export ──
@@ -397,6 +415,12 @@ async function sendMessage() {
         threadTitleEl.textContent = data.thread.title;
       }
       addMessage('assistant', data.message, data.mode);
+      // Update career progress if in career mode
+      if (data.mode === 'career' && data.question_number !== undefined) {
+        careerQuestionNumber = data.question_number;
+        updateCareerProgress(data.question_number);
+        showCareerProgress(true);
+      }
     } else {
       addMessage('assistant', `⚠️ Error: ${data.error || 'Something went wrong. Please try again.'}`, currentMode);
     }
@@ -422,7 +446,7 @@ function addMessage(role, text, mode) {
   if (role === 'assistant') {
     const badge = document.createElement('span');
     badge.className = `msg-mode-badge ${mode}`;
-    badge.textContent = { chat: '💬 Chat', document: '📄 Document', research: '🔍 Research' }[mode] || mode;
+    badge.textContent = { chat: '💬 Chat', document: '📄 Document', research: '🔍 Research', career: '🎯 Career Clarity' }[mode] || mode;
     bubble.appendChild(badge);
   }
 
@@ -502,6 +526,18 @@ async function loadThread(threadId) {
     t.messages.forEach(m => addMessage(m.role, m.content, m.mode));
     updateActiveThread(threadId);
     scrollToBottom();
+
+    // Restore career progress bar if this is a career thread
+    if (t.mode === 'career') {
+      setActiveMode('career');
+      const userMsgCount = t.messages.filter(m => m.role === 'user').length;
+      careerQuestionNumber = Math.min(userMsgCount, 8);
+      updateCareerProgress(careerQuestionNumber);
+      showCareerProgress(true);
+    } else {
+      showCareerProgress(false);
+      setActiveMode(t.mode || 'chat');
+    }
   } catch (err) {
     console.error('Failed to load thread:', err);
   }
@@ -542,6 +578,99 @@ function setLoading(loading) {
 
 function scrollToBottom() {
   messagesEl.scrollTop = messagesEl.scrollHeight;
+}
+
+// ─── CAREER CLARITY MODE ───
+
+let careerQuestionNumber = 0;
+
+function showCareerHook() {
+  document.getElementById('career-hook-overlay').classList.remove('hidden');
+}
+
+function hideCareerHook() {
+  document.getElementById('career-hook-overlay').classList.add('hidden');
+}
+
+async function startCareerJourney() {
+  hideCareerHook();
+
+  // Switch mode visually
+  setActiveMode('career');
+  updateCareerProgress(0);
+  showCareerProgress(true);
+
+  try {
+    const resp = await fetch('/api/career/start', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    });
+
+    // Handle auth expiry
+    if (resp.status === 401) {
+      showAuth();
+      showCareerProgress(false);
+      return;
+    }
+
+    const data = await resp.json();
+
+    if (data.success) {
+      currentThreadId = data.thread.id;
+      careerQuestionNumber = 0;
+
+      // Clear chat and show opening message
+      messagesEl.innerHTML = '';
+      welcomeEl.style.display = 'none';
+      appendMessage('assistant', data.opening_message, 'career');
+      updateCareerProgress(0);
+
+      // Update thread list and title
+      threadTitleEl.textContent = data.thread.title;
+      loadThreads();
+      updateActiveThread(data.thread.id);
+    } else {
+      addMessage('assistant', `⚠️ Error: ${data.error || 'Failed to start career session. Please try again.'}`, 'career');
+    }
+  } catch (err) {
+    addMessage('assistant', '⚠️ Network error — please check your connection and try again.', 'career');
+  }
+}
+
+function appendMessage(role, text, mode) {
+  // Alias for addMessage — used by startCareerJourney
+  addMessage(role, text, mode);
+}
+
+function updateCareerProgress(questionNum) {
+  const fill  = document.getElementById('career-progress-fill');
+  const label = document.getElementById('career-progress-label');
+  if (!fill || !label) return;
+
+  if (questionNum >= 8) {
+    fill.style.width    = '100%';
+    label.textContent   = '✅ Report Complete';
+    label.style.color   = 'var(--accent2)';
+  } else if (questionNum === 0) {
+    fill.style.width    = '0%';
+    label.textContent   = 'Starting your journey…';
+    label.style.color   = '';
+  } else {
+    const pct           = (questionNum / 8) * 100;
+    fill.style.width    = pct + '%';
+    label.textContent   = `Question ${questionNum} of 8`;
+    label.style.color   = '';
+  }
+}
+
+function showCareerProgress(show) {
+  const bar = document.getElementById('career-progress-bar');
+  if (!bar) return;
+  if (show) {
+    bar.classList.remove('hidden');
+  } else {
+    bar.classList.add('hidden');
+  }
 }
 
 // ── Init ──
