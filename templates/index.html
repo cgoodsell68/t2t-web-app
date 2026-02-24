@@ -167,6 +167,11 @@
           <span class="mode-icon">🔍</span>
           <span>Research</span>
         </button>
+        <button class="mode-btn mode-btn-career" data-mode="career" onclick="setMode('career')">
+          <span class="mode-icon">🎯</span>
+          <span class="mode-label">Career Clarity</span>
+          <span class="mode-badge">NEW</span>
+        </button>
       </div>
     </div>
 
@@ -225,6 +230,14 @@
       </div>
     </header>
 
+    <!-- Career Progress Bar -->
+    <div id="career-progress-bar" class="career-progress hidden">
+      <div class="career-progress-track">
+        <div class="career-progress-fill" id="career-progress-fill"></div>
+      </div>
+      <span class="career-progress-label" id="career-progress-label">Question 1 of 8</span>
+    </div>
+
     <!-- Messages -->
     <div class="messages" id="messages">
       <div class="welcome-screen" id="welcomeScreen">
@@ -271,6 +284,23 @@
     </div>
 
   </main>
+
+  <!-- Career Clarity Hook Overlay -->
+  <div id="career-hook-overlay" class="career-hook-overlay hidden">
+    <div class="career-hook-content">
+      <img src="/static/t2t_logo_circle.png" alt="T2T" class="career-hook-logo">
+      <div class="career-hook-badge">🎯 Career Clarity Coach</div>
+      <h1 class="career-hook-headline">8 questions.<br>10 minutes.<br>Total clarity.</h1>
+      <p class="career-hook-body">Walk away with your personalised <strong>LinkedIn Transformation Plan</strong> and your <strong>90-Day Career Clarity Roadmap</strong> — built entirely from your answers.</p>
+      <div class="career-hook-price-block">
+        <span class="career-hook-price">£67</span>
+        <span class="career-hook-was">was £97</span>
+        <span class="career-hook-tag">Intro Offer</span>
+      </div>
+      <button class="btn-career-start" onclick="startCareerJourney()">Start Your 90-Day Journey →</button>
+      <p class="career-hook-note">Answer 8 important questions. No prep needed.</p>
+    </div>
+  </div>
 
   <!-- marked.js for markdown rendering -->
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
