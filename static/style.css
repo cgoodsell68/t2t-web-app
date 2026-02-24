@@ -89,9 +89,9 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --bg: #0f1117;
-  --bg2: #161b27;
-  --bg3: #1e2535;
+  --bg: #14113a;
+  --bg2: #1a1750;
+  --bg3: #201B57;
   --accent: #00b4c8;
   --accent2: #7dc241;
   --accent-hover: #009aab;
@@ -100,7 +100,7 @@
   --text: #e8eaf0;
   --text2: #9aa0b2;
   --text3: #5c6478;
-  --border: #252d3f;
+  --border: #2e2a6a;
   --radius: 12px;
   --sidebar-w: 280px;
   --font: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -825,7 +825,7 @@ body { display: flex; height: 100vh; }
 .auth-overlay {
   position: fixed;
   inset: 0;
-  background: var(--bg-primary);
+  background: var(--bg);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -834,7 +834,7 @@ body { display: flex; height: 100vh; }
 }
 
 .auth-card {
-  background: var(--bg-secondary);
+  background: var(--bg2);
   border: 1px solid var(--border);
   border-radius: 16px;
   padding: 40px;
@@ -915,7 +915,7 @@ body { display: flex; height: 100vh; }
 }
 
 .auth-field input {
-  background: var(--bg-primary);
+  background: var(--bg);
   border: 1px solid var(--border);
   border-radius: 8px;
   padding: 10px 14px;
@@ -1029,7 +1029,7 @@ body { display: flex; height: 100vh; }
 }
 
 .onboarding-modal {
-  background: #1a1b2e;
+  background: var(--bg3);
   border: 1px solid rgba(139, 92, 246, 0.25);
   border-radius: 20px;
   padding: 2.5rem 2.5rem 2rem;
