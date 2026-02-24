@@ -151,11 +151,10 @@ body { display: flex; height: 100vh; }
 }
 
 .sidebar-logo-img {
-  width: 100%;
-  max-width: 200px;
-  height: auto;
+  width: 64px;
+  height: 64px;
   object-fit: contain;
-  filter: brightness(1.05);
+  border-radius: 50%;
 }
 
 /* Keep these for any residual markup */
@@ -853,11 +852,11 @@ body { display: flex; height: 100vh; }
 }
 
 .auth-logo-img {
-  width: 200px;
-  height: auto;
+  width: 160px;
+  height: 160px;
   object-fit: contain;
-  filter: brightness(1.05);
-  margin-bottom: 4px;
+  border-radius: 12px;
+  margin-bottom: 8px;
 }
 
 .auth-logo-mark {
