@@ -157,7 +157,7 @@ with app.app_context():
         _seed_user = User(
             name='Christopher Goodsell',
             email=_seed_email,
-            password=generate_password_hash('CharlieDog2025!!!'),
+            password_hash=generate_password_hash('CharlieDog2025!!!'),
             tier=2
         )
         db.session.add(_seed_user)
