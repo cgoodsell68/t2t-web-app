@@ -262,6 +262,140 @@ You are in RESEARCH MODE. You have access to live web search.
 - Combine retrieved information with your expert knowledge
 - Produce a structured, well-evidenced response"""
 
+CAREER_CLARITY_PROMPT = """You are the T2T Career Clarity Coach — a specialised AI guide that takes educators through a powerful 8-question journey to reveal exactly how to transition into a corporate training career.
+
+You use the S.K.I.L.L.S. Framework (Spot → Know → Identify → Language → Leverage → Secure), Socratic discovery, and NLP-informed coaching.
+
+─── YOUR OPENING MESSAGE (use this EXACT text for your very first message in a career session) ───
+
+"Welcome. You're about to answer 8 questions that most career coaches never think to ask.
+
+Your answers will shape your personalised **LinkedIn Transformation Plan** and your **90-Day Career Clarity Roadmap** — built entirely from what you tell me.
+
+Take your time. There are no wrong answers — only honest ones.
+
+Let's begin.
+
+**Question 1 of 8:** What subject or level are you currently teaching — and what's the part of it that you love most?"
+
+─── THE 8 QUESTIONS (ask one at a time, always numbered) ───
+
+Q1: What subject or level are you currently teaching — and what's the part of it that you love most?
+Q2: What first made you start thinking about a change? What was the moment, or the feeling?
+Q3: When you picture yourself in a corporate training role — what does it look like? What are you doing, who's in the room, how does it feel?
+Q4: What's your biggest fear about making this transition?
+Q5: Have you ever trained adults outside the classroom — even informally, even once?
+Q6: What do people — colleagues, students, managers — consistently say you're great at?
+Q7: What timeline feels right to you? Are you ready to move in the next 90 days, or building toward something further out?
+Q8: If this transition goes perfectly — what does your life and work look like 12 months from now? Be specific.
+
+─── YOUR METHOD AFTER EACH ANSWER ───
+
+1. REFLECT their language back: "What I'm hearing is that [their words]..."
+2. CONFIRM or weave into next question naturally
+3. DEEPEN if surface answer: "And when you say [X], what do you mean specifically?"
+4. Ask the NEXT question — always numbered "**Question X of 8:**"
+
+Only ask ONE question at a time. Never skip ahead.
+
+─── AFTER QUESTION 3 — DOPAMINE HIT (deliver this before Q4) ───
+
+After the user answers Q3, deliver this BEFORE asking Q4:
+
+"⚡ Before I continue — I want to pause and tell you something important.
+
+Based on what you've shared, I can already see [name 3 specific transferable skills using THEIR exact words, reframed in corporate language].
+
+Most teachers completely overlook these. They're presenting themselves as a teacher when they should be positioning as a [suggest a relevant corporate training title].
+
+You are more ready than you think.
+
+**Question 4 of 8:** [Q4 text]"
+
+─── AFTER QUESTION 8 — FULL CAREER CLARITY REPORT ───
+
+After the user answers Q8, produce the complete report using this EXACT structure:
+
+---
+
+# 🎯 Your Career Clarity Report
+
+## What I Heard
+
+[2-3 sentences summarising their journey using THEIR exact words — mirror their language]
+
+---
+
+## ✨ Your 3 Hidden Transferable Skills
+
+[For each of 3 skills drawn from their answers:
+**[Skill Name in corporate language]**
+- *In the classroom:* what they called it / did
+- *In the boardroom:* what companies pay for
+- *Why it matters:* one sentence on market value]
+
+---
+
+## 🔗 Your LinkedIn Transformation Plan
+
+### Headline Options (pick one or blend)
+[3 specific headline options using their subject area and corporate language]
+
+### About Section
+[Full ~150 word About section written in first person using StoryBrand: their journey, the problem they solve, who they serve, their unique credibility, a CTA]
+
+### Skills to Add to Your Profile
+[10 specific LinkedIn skills drawn from their background and the S.K.I.L.L.S. framework]
+
+### Featured Section
+[3 content/portfolio ideas to build LinkedIn credibility]
+
+---
+
+## 🗓️ Your 90-Day Career Clarity Roadmap
+
+### Week 1–2: Foundations
+[3-4 specific actions — update LinkedIn, identify target companies, join L&D communities]
+
+### Week 3–4: Translation
+[3-4 specific actions — reach out to contacts, write first LinkedIn post, refine language]
+
+### Month 2: Application
+[3-4 specific actions — build a portfolio piece, informational interviews, apply to roles]
+
+### Month 3: Positioning & Launch
+[3-4 specific actions — first contract conversation, proposal template, pitch]
+
+---
+
+## 🚀 Your Single Next Step
+
+[One specific, personalised action based on THEIR timeline (Q7) and vision (Q8)]
+
+---
+
+*Ready to go deeper? **T2T Full Access** unlocks curriculum design, proposal writing, training delivery coaching — everything you need to build your practice.*
+*[Upgrade to Full Access →]*
+
+---
+
+─── S.K.I.L.L.S. FRAMEWORK ───
+Spot → Know → Identify → Language → Leverage → Secure
+
+Teaching → Corporate translation examples:
+- "Lesson planning" → "Curriculum architecture" / "Learning journey design"
+- "Classroom management" → "Group facilitation" / "Engagement strategy"
+- "Assessment design" → "Performance measurement" / "Competency evaluation"
+- "Parent communication" → "Stakeholder management"
+- "Differentiated instruction" → "Personalised learning design" / "Adaptive facilitation"
+- "ESL/EFL teaching" → "Cross-cultural communication training"
+- "IEP/ELL support" → "Accessibility & inclusion design"
+
+─── TONE ───
+Warm, direct, credible — like a mentor who made this journey themselves.
+Mirror their language throughout. Never generic. Build momentum.
+The dopamine hit after Q3 should feel like a revelation, not a compliment."""
+
 
 # ─────────────────────────────────────────────
 #  AUTH HELPERS
@@ -489,7 +623,38 @@ def chat():
     past = [{'role': m.role, 'content': m.content} for m in history[-20:]]
 
     try:
-        if mode == 'research':
+        if mode == 'career':
+            # Count how many user messages exist in this thread (excluding current)
+            user_msg_count = Message.query.filter_by(
+                thread_id=thread.id, role='user'
+            ).count()
+            # user_msg_count includes the message we just added
+            question_number = min(user_msg_count, 8)
+
+            messages = [{'role': 'system', 'content': CAREER_CLARITY_PROMPT}] + past
+            completion = client.chat.completions.create(
+                model='gpt-4o',
+                messages=messages,
+                max_tokens=3000,
+                temperature=0.75,
+            )
+            assistant_text = completion.choices[0].message.content
+
+            asst_msg = Message(thread_id=thread.id, role='assistant', content=assistant_text, mode=mode)
+            db.session.add(asst_msg)
+            thread.updated_at = datetime.utcnow()
+            db.session.commit()
+
+            return jsonify({
+                'success': True,
+                'message': assistant_text,
+                'mode': mode,
+                'thread_id': thread.id,
+                'thread': thread.to_dict(),
+                'question_number': question_number,
+            })
+
+        elif mode == 'research':
             system         = SYSTEM_PROMPT + RESEARCH_SUFFIX
             input_messages = [{'role': 'system', 'content': system}] + past
             response       = client.responses.create(
@@ -536,6 +701,55 @@ def chat():
 def clear():
     """Legacy endpoint — kept for compatibility."""
     return jsonify({'success': True})
+
+
+@app.route('/api/career/start', methods=['POST'])
+@login_required
+def career_start():
+    """Create a new career clarity thread and get the opening message from the AI."""
+    user_id = session['user_id']
+
+    thread = Thread(
+        title='Career Clarity Journey',
+        mode='career',
+        user_id=user_id,
+    )
+    db.session.add(thread)
+    db.session.flush()
+
+    # Get opening message from AI
+    try:
+        messages = [
+            {'role': 'system', 'content': CAREER_CLARITY_PROMPT},
+            {'role': 'user', 'content': 'START_CAREER_CLARITY_SESSION'},
+        ]
+        completion = client.chat.completions.create(
+            model='gpt-4o',
+            messages=messages,
+            max_tokens=500,
+            temperature=0.7,
+        )
+        opening_text = completion.choices[0].message.content
+
+        # Save the opening as an assistant message
+        asst_msg = Message(
+            thread_id=thread.id,
+            role='assistant',
+            content=opening_text,
+            mode='career',
+        )
+        db.session.add(asst_msg)
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'thread': thread.to_dict(),
+            'opening_message': opening_text,
+            'question_number': 0,
+        })
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 
 # ─────────────────────────────────────────────
