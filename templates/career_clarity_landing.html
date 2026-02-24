@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Career Clarity Coach — Teacher to Trainer</title>
+  <meta name="description" content="8 questions. 10 minutes. Walk away knowing exactly how to position yourself for a 6-figure training career.">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    :root {
+      --bg: #14113a;
+      --bg2: #1a1750;
+      --bg3: #201B57;
+      --accent: #00b4c8;
+      --accent2: #7dc241;
+      --text: #e8e8f0;
+      --muted: #9898b8;
+      --card: #201B57;
+      --card-border: rgba(0,180,200,0.15);
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    /* ── NAV ── */
+    nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 40px;
+      background: rgba(20,17,58,0.95);
+      backdrop-filter: blur(12px);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      border-bottom: 1px solid var(--card-border);
+    }
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+    }
+    .nav-logo img {
+      width: 36px;
+      height: 36px;
+      object-fit: contain;
+    }
+    .nav-logo span {
+      font-weight: 700;
+      font-size: 18px;
+      color: var(--accent);
+      letter-spacing: 0.5px;
+    }
+    .nav-cta {
+      background: var(--accent2);
+      color: white;
+      border: none;
+      padding: 10px 24px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 15px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: opacity 0.2s;
+    }
+    .nav-cta:hover { opacity: 0.88; }
+
+    /* ── HERO ── */
+    .hero {
+      padding: 80px 40px 60px;
+      text-align: center;
+      max-width: 860px;
+      margin: 0 auto;
+      position: relative;
+    }
+    .hero-badge {
+      display: inline-block;
+      background: rgba(0,180,200,0.12);
+      border: 1px solid rgba(0,180,200,0.35);
+      color: var(--accent);
+      padding: 6px 16px;
+      border-radius: 99px;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      margin-bottom: 24px;
+    }
+    .hero h1 {
+      font-size: clamp(2rem, 5vw, 3.2rem);
+      font-weight: 800;
+      line-height: 1.15;
+      margin-bottom: 20px;
+      color: white;
+    }
+    .hero h1 span { color: var(--accent); }
+    .hero-sub {
+      font-size: 1.15rem;
+      color: var(--muted);
+      max-width: 580px;
+      margin: 0 auto 36px;
+      line-height: 1.7;
+    }
+    .hero-cta-group {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent2) 0%, #5fa832 100%);
+      color: white;
+      border: none;
+      padding: 16px 40px;
+      border-radius: 10px;
+      font-size: 17px;
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+      transition: transform 0.15s, box-shadow 0.15s;
+      box-shadow: 0 4px 20px rgba(125,194,65,0.35);
+    }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(125,194,65,0.45); }
+    .btn-secondary {
+      color: var(--accent);
+      text-decoration: none;
+      font-size: 15px;
+      font-weight: 500;
+      border: 1px solid rgba(0,180,200,0.4);
+      padding: 15px 28px;
+      border-radius: 10px;
+      transition: background 0.2s;
+    }
+    .btn-secondary:hover { background: rgba(0,180,200,0.08); }
+    .hero-disclaimer {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    /* ── SOCIAL PROOF BAR ── */
+    .proof-bar {
+      background: var(--bg2);
+      border-top: 1px solid var(--card-border);
+      border-bottom: 1px solid var(--card-border);
+      padding: 24px 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 40px;
+      flex-wrap: wrap;
+    }
+    .proof-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      color: var(--muted);
+    }
+    .proof-item .icon { font-size: 18px; }
+    .proof-item strong { color: var(--text); }
+
+    /* ── SECTIONS ── */
+    section {
+      padding: 80px 40px;
+      max-width: 960px;
+      margin: 0 auto;
+    }
+    .section-label {
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      font-size: 12px;
+      color: var(--accent);
+      font-weight: 700;
+      margin-bottom: 12px;
+    }
+    h2 {
+      font-size: clamp(1.6rem, 3.5vw, 2.4rem);
+      font-weight: 800;
+      line-height: 1.2;
+      margin-bottom: 16px;
+    }
+    h2 span { color: var(--accent); }
+    .section-desc {
+      font-size: 1.05rem;
+      color: var(--muted);
+      max-width: 580px;
+      margin-bottom: 48px;
+      line-height: 1.7;
+    }
+
+    /* ── PROBLEM ── */
+    .problem-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 20px;
+      margin-bottom: 40px;
+    }
+    .problem-card {
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 24px;
+    }
+    .problem-card .emoji { font-size: 1.5rem; margin-bottom: 10px; display: block; }
+    .problem-card p { font-size: 14px; color: var(--muted); line-height: 1.6; }
+    .problem-card p strong { color: var(--text); }
+
+    /* ── HOW IT WORKS ── */
+    .steps {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      position: relative;
+    }
+    .steps::before {
+      content: '';
+      position: absolute;
+      left: 20px;
+      top: 30px;
+      bottom: 30px;
+      width: 2px;
+      background: linear-gradient(to bottom, var(--accent), var(--accent2));
+      opacity: 0.3;
+    }
+    .step {
+      display: flex;
+      gap: 24px;
+      padding: 28px 0;
+      position: relative;
+    }
+    .step-num {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: var(--bg3);
+      border: 2px solid var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 15px;
+      color: var(--accent);
+      flex-shrink: 0;
+      position: relative;
+      z-index: 1;
+    }
+    .step-content h3 { font-size: 1.1rem; font-weight: 700; margin-bottom: 6px; }
+    .step-content p { font-size: 14px; color: var(--muted); line-height: 1.6; }
+    .step-highlight {
+      display: inline-block;
+      background: rgba(0,180,200,0.12);
+      border: 1px solid rgba(0,180,200,0.25);
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 600;
+      padding: 3px 10px;
+      border-radius: 4px;
+      margin-top: 8px;
+    }
+
+    /* ── WHAT YOU GET ── */
+    .deliverables {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+    }
+    .deliverable-card {
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 28px;
+      transition: border-color 0.2s, transform 0.2s;
+    }
+    .deliverable-card:hover {
+      border-color: rgba(0,180,200,0.4);
+      transform: translateY(-3px);
+    }
+    .deliverable-icon { font-size: 2rem; margin-bottom: 14px; }
+    .deliverable-card h3 { font-size: 1.05rem; font-weight: 700; margin-bottom: 8px; }
+    .deliverable-card p { font-size: 14px; color: var(--muted); line-height: 1.6; }
+
+    /* ── DOPAMINE PREVIEW ── */
+    .dopamine-box {
+      background: linear-gradient(135deg, rgba(0,180,200,0.08) 0%, rgba(125,194,65,0.08) 100%);
+      border: 1px solid rgba(0,180,200,0.25);
+      border-radius: 16px;
+      padding: 40px;
+      text-align: center;
+    }
+    .dopamine-box .zap { font-size: 2.5rem; margin-bottom: 16px; }
+    .dopamine-box h3 { font-size: 1.3rem; font-weight: 700; margin-bottom: 12px; color: var(--accent); }
+    .dopamine-box p { font-size: 15px; color: var(--muted); max-width: 480px; margin: 0 auto; line-height: 1.7; }
+
+    /* ── PRICING ── */
+    .pricing-card {
+      background: var(--card);
+      border: 2px solid var(--accent);
+      border-radius: 20px;
+      padding: 48px;
+      max-width: 480px;
+      margin: 0 auto;
+      text-align: center;
+      position: relative;
+      box-shadow: 0 0 40px rgba(0,180,200,0.15);
+    }
+    .pricing-badge {
+      position: absolute;
+      top: -14px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--accent2);
+      color: white;
+      padding: 5px 20px;
+      border-radius: 99px;
+      font-size: 13px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .price-original {
+      font-size: 15px;
+      color: var(--muted);
+      text-decoration: line-through;
+      margin-bottom: 4px;
+    }
+    .price-main {
+      font-size: 4rem;
+      font-weight: 900;
+      color: white;
+      line-height: 1;
+      margin-bottom: 4px;
+    }
+    .price-main sup { font-size: 1.5rem; vertical-align: top; margin-top: 12px; }
+    .price-note {
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 32px;
+    }
+    .pricing-features {
+      list-style: none;
+      text-align: left;
+      margin-bottom: 32px;
+    }
+    .pricing-features li {
+      padding: 10px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      font-size: 15px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .pricing-features li:last-child { border-bottom: none; }
+    .pricing-features li .check { color: var(--accent2); font-size: 16px; flex-shrink: 0; }
+    .pricing-cta {
+      width: 100%;
+      background: linear-gradient(135deg, var(--accent2) 0%, #5fa832 100%);
+      color: white;
+      border: none;
+      padding: 18px;
+      border-radius: 12px;
+      font-size: 18px;
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: none;
+      display: block;
+      transition: transform 0.15s, box-shadow 0.15s;
+      box-shadow: 0 4px 20px rgba(125,194,65,0.35);
+      margin-bottom: 16px;
+    }
+    .pricing-cta:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(125,194,65,0.45); }
+    .pricing-guarantee {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    /* ── FAQ ── */
+    .faq-list { display: flex; flex-direction: column; gap: 16px; }
+    .faq-item {
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 24px;
+    }
+    .faq-item h3 { font-size: 15px; font-weight: 700; margin-bottom: 8px; color: var(--text); }
+    .faq-item p { font-size: 14px; color: var(--muted); line-height: 1.7; }
+
+    /* ── FINAL CTA ── */
+    .final-cta {
+      text-align: center;
+      background: linear-gradient(135deg, var(--bg2) 0%, var(--bg3) 100%);
+      border-top: 1px solid var(--card-border);
+      border-bottom: 1px solid var(--card-border);
+      padding: 80px 40px;
+    }
+    .final-cta h2 { margin-bottom: 16px; }
+    .final-cta p { color: var(--muted); max-width: 500px; margin: 0 auto 36px; }
+
+    /* ── FOOTER ── */
+    footer {
+      text-align: center;
+      padding: 32px 40px;
+      border-top: 1px solid var(--card-border);
+      font-size: 13px;
+      color: var(--muted);
+    }
+    footer a { color: var(--accent); text-decoration: none; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 600px) {
+      nav { padding: 14px 20px; }
+      .hero, section { padding: 60px 20px; }
+      .proof-bar { padding: 20px; gap: 20px; }
+      .pricing-card { padding: 36px 24px; }
+      .dopamine-box { padding: 28px 20px; }
+      .final-cta { padding: 60px 20px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a class="nav-logo" href="/">
+    <img src="/static/t2t_logo_circle.png" alt="T2T Logo">
+    <span>Teacher to Trainer</span>
+  </a>
+  <a class="nav-cta" href="/career-clarity#pricing">Get Started — $67</a>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-badge">🎯 Career Clarity Coach — AI-Powered</div>
+  <h1>8 questions. 10 minutes.<br><span>Know exactly how to position yourself</span><br>for a 6-figure training career.</h1>
+  <p class="hero-sub">You've spent years building skills that companies pay top dollar for — but you're still packaging yourself as a teacher. That ends today.</p>
+  <div class="hero-cta-group">
+    <a class="btn-primary" href="/career-clarity#pricing">Start Your Journey →</a>
+    <a class="btn-secondary" href="/">Already have access? Sign in</a>
+  </div>
+  <p class="hero-disclaimer">One-time access · No subscription · Instant results</p>
+</div>
+
+<!-- PROOF BAR -->
+<div class="proof-bar">
+  <div class="proof-item"><span class="icon">⚡</span><span><strong>10 minutes</strong> to complete</span></div>
+  <div class="proof-item"><span class="icon">🎯</span><span><strong>Personalised</strong> to your background</span></div>
+  <div class="proof-item"><span class="icon">📄</span><span><strong>Full LinkedIn plan</strong> included</span></div>
+  <div class="proof-item"><span class="icon">🗓️</span><span><strong>90-Day Roadmap</strong> built for you</span></div>
+  <div class="proof-item"><span class="icon">🔒</span><span><strong>Secure</strong> payment via Stripe</span></div>
+</div>
+
+<!-- PROBLEM -->
+<section>
+  <div class="section-label">The Problem</div>
+  <h2>You're more ready than you think —<br><span>but no one can see it yet</span></h2>
+  <p class="section-desc">The corporate training world is full of opportunities — but only if you know how to speak its language. Most teachers don't.</p>
+  <div class="problem-grid">
+    <div class="problem-card">
+      <span class="emoji">😤</span>
+      <p><strong>"I don't know how to translate my experience."</strong> Your classroom skills are incredibly valuable — they're just packaged wrong.</p>
+    </div>
+    <div class="problem-card">
+      <span class="emoji">🤷</span>
+      <p><strong>"I don't know where to start."</strong> No clear path, no roadmap, no mentor who's made this exact transition before.</p>
+    </div>
+    <div class="problem-card">
+      <span class="emoji">😰</span>
+      <p><strong>"I'm afraid they won't take me seriously."</strong> Imposter syndrome is real — but it's based on a story that isn't true.</p>
+    </div>
+    <div class="problem-card">
+      <span class="emoji">📉</span>
+      <p><strong>"My LinkedIn looks like a teaching CV."</strong> Recruiters scroll past because your profile isn't speaking their language.</p>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section style="background: var(--bg2); max-width: 100%; padding: 80px 0;">
+  <div style="max-width: 960px; margin: 0 auto; padding: 0 40px;">
+    <div class="section-label">How It Works</div>
+    <h2>Your 10-minute <span>career revelation</span></h2>
+    <p class="section-desc">Our AI coach uses 8 carefully crafted questions to surface insights most career coaches never find — then builds your personalised action plan on the spot.</p>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-content">
+          <h3>Answer 8 Socratic questions</h3>
+          <p>Designed using NLP-informed coaching and the S.K.I.L.L.S. framework. Each answer shapes everything that follows — there are no wrong answers, only honest ones.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-content">
+          <h3>Get your mid-session insight</h3>
+          <p>After Question 3, your coach pauses to reveal 3 transferable skills most teachers completely overlook — reframed in corporate language.</p>
+          <span class="step-highlight">⚡ The "you're more ready than you think" moment</span>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-content">
+          <h3>Receive your Career Clarity Report</h3>
+          <p>A complete, personalised document built entirely from your answers. LinkedIn transformation plan, 90-day roadmap, and your single next step.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-content">
+          <h3>Take action</h3>
+          <p>Walk away with a concrete plan you can execute this week — not a vague framework, but specific actions tailored to your timeline and goals.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DOPAMINE PREVIEW -->
+<section>
+  <div class="dopamine-box">
+    <div class="zap">⚡</div>
+    <h3>At Question 3, something shifts.</h3>
+    <p>Before we continue — I want to pause and tell you something important. Based on what you've shared, I can already see <em>3 transferable skills most teachers completely overlook</em>. You've been presenting yourself as a teacher when you should be positioning as an L&D Consultant. You are more ready than you think.</p>
+  </div>
+</section>
+
+<!-- WHAT YOU GET -->
+<section>
+  <div class="section-label">What You Get</div>
+  <h2>Everything you need to <span>take the leap</span></h2>
+  <p class="section-desc">Your Career Clarity Report is a complete, ready-to-use action plan — not a generic template, but built from your exact answers.</p>
+  <div class="deliverables">
+    <div class="deliverable-card">
+      <div class="deliverable-icon">🔗</div>
+      <h3>LinkedIn Transformation Plan</h3>
+      <p>3 headline options, a full About section written in your voice, 10 strategic skills to add, and 3 featured content ideas to build credibility.</p>
+    </div>
+    <div class="deliverable-card">
+      <div class="deliverable-icon">🗓️</div>
+      <h3>90-Day Career Clarity Roadmap</h3>
+      <p>Week-by-week milestones for Weeks 1–2, 3–4, Month 2, and Month 3. Specific actions, not vague advice.</p>
+    </div>
+    <div class="deliverable-card">
+      <div class="deliverable-icon">✨</div>
+      <h3>3 Hidden Transferable Skills</h3>
+      <p>Each one named in corporate language, with the classroom-to-boardroom translation and why it has market value.</p>
+    </div>
+    <div class="deliverable-card">
+      <div class="deliverable-icon">🎯</div>
+      <h3>Your Single Next Step</h3>
+      <p>One specific, personalised action based on your timeline and vision — so you leave with momentum, not just inspiration.</p>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section id="pricing" style="background: var(--bg2); max-width: 100%; padding: 80px 0;">
+  <div style="max-width: 960px; margin: 0 auto; padding: 0 40px; text-align: center;">
+    <div class="section-label">Pricing</div>
+    <h2 style="margin-bottom: 12px;">One price. One time. <span>No catch.</span></h2>
+    <p style="color: var(--muted); margin-bottom: 48px; max-width: 480px; margin-left: auto; margin-right: auto;">Career transition is a one-time goal — so we charge for it once. Access your results for 90 days, use them to launch your new chapter.</p>
+    <div class="pricing-card">
+      <div class="pricing-badge">🔥 Launch Intro Price — 30% Off</div>
+      <p class="price-original">Standard price: $97</p>
+      <div class="price-main"><sup>$</sup>67</div>
+      <p class="price-note">One-time payment · 90-day access · USD</p>
+      <ul class="pricing-features">
+        <li><span class="check">✓</span> Full 8-question AI career coaching session</li>
+        <li><span class="check">✓</span> Personalised Career Clarity Report</li>
+        <li><span class="check">✓</span> LinkedIn Transformation Plan</li>
+        <li><span class="check">✓</span> 90-Day Career Clarity Roadmap</li>
+        <li><span class="check">✓</span> Your 3 Hidden Transferable Skills</li>
+        <li><span class="check">✓</span> Unlimited sessions for 90 days</li>
+      </ul>
+      <a class="pricing-cta" href="https://web-production-9a5f2.up.railway.app">Get Instant Access →</a>
+      <p class="pricing-guarantee">🔒 Secure payment via Stripe · Instant access after payment</p>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section>
+  <div class="section-label">FAQ</div>
+  <h2>Got questions? <span>We've got answers.</span></h2>
+  <div class="faq-list" style="margin-top: 32px;">
+    <div class="faq-item">
+      <h3>Do I need teaching experience to use this?</h3>
+      <p>Yes — Career Clarity Coach is specifically designed for classroom teachers and educators who want to transition into corporate training, L&D, or instructional design. If you've been in a classroom, you're exactly who we built this for.</p>
+    </div>
+    <div class="faq-item">
+      <h3>How long does the session take?</h3>
+      <p>Around 10–15 minutes for the 8 questions, plus a few minutes to read your personalised Career Clarity Report. It's designed to be fast and impactful — not another 2-hour course you'll never finish.</p>
+    </div>
+    <div class="faq-item">
+      <h3>What if I've already started looking at L&D roles?</h3>
+      <p>Even better. The Career Clarity Coach will sharpen your positioning, identify gaps in how you're presenting yourself, and give you specific language to use in interviews and LinkedIn outreach.</p>
+    </div>
+    <div class="faq-item">
+      <h3>Is this a one-time payment or a subscription?</h3>
+      <p>One-time payment, $67. You get 90-day access to run as many sessions as you want. Career transition is a finite goal — so we priced it that way. (We do offer a full platform subscription for active training professionals — that's a different product.)</p>
+    </div>
+    <div class="faq-item">
+      <h3>What happens after I pay?</h3>
+      <p>You're instantly redirected to create your T2T account (or log in if you have one). From there, Career Clarity Coach is unlocked and waiting. The whole thing takes about 2 minutes from payment to first question.</p>
+    </div>
+  </div>
+</section>
+
+<!-- FINAL CTA -->
+<div class="final-cta">
+  <div class="section-label">Ready?</div>
+  <h2>Your corporate training career<br><span>starts with 8 questions.</span></h2>
+  <p>10 minutes from now, you'll know exactly how to position yourself, what to say on LinkedIn, and what to do first.</p>
+  <a class="btn-primary" href="https://web-production-9a5f2.up.railway.app" style="font-size: 18px; padding: 18px 48px;">Start Your Career Clarity Journey →</a>
+  <p style="margin-top: 16px; font-size: 13px; color: var(--muted);">$67 one-time · Instant access · No subscription required</p>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <p>© 2025 Teacher to Trainer · <a href="/">Sign In</a> · Built with ❤️ for educators making their move</p>
+</footer>
+
+</body>
+</html>
