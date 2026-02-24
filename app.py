@@ -6,9 +6,24 @@ from functools import wraps
 import os
 import requests as http_requests
 import stripe
+import smtplib
+import secrets
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'change-this-in-production-please')
+
+@app.after_request
+def add_headers(response):
+    # Allow embedding in GHL pages (use CSP frame-ancestors instead of X-Frame-Options)
+    response.headers['Content-Security-Policy'] = (
+        "frame-ancestors 'self' https://*.gohighlevel.com https://*.leadconnectorhq.com "
+        "https://*.myclients.io https://*.highlevel.com https://*.gohighlevelpages.com"
+    )
+    # Remove X-Frame-Options so it doesn't override CSP
+    response.headers.pop('X-Frame-Options', None)
+    return response
 
 # ─────────────────────────────────────────────
 #  DATABASE SETUP
@@ -39,6 +54,8 @@ class User(db.Model):
     has_seen_onboarding = db.Column(db.Boolean, default=False, nullable=False, server_default='0')
     tier                = db.Column(db.Integer, default=0, nullable=False, server_default='0')  # 0=free, 1=Tier1, 2=Tier2
     stripe_customer_id  = db.Column(db.String(100))
+    reset_token         = db.Column(db.String(100))
+    reset_token_expires = db.Column(db.DateTime)
     created_at          = db.Column(db.DateTime, default=datetime.utcnow)
     threads             = db.relationship('Thread', backref='user', lazy=True,
                                           cascade='all, delete-orphan')
@@ -120,6 +137,8 @@ with app.app_context():
         'ALTER TABLE users ADD COLUMN has_seen_onboarding BOOLEAN NOT NULL DEFAULT 0',
         'ALTER TABLE users ADD COLUMN tier INTEGER NOT NULL DEFAULT 0',
         'ALTER TABLE users ADD COLUMN stripe_customer_id VARCHAR(100)',
+        'ALTER TABLE users ADD COLUMN reset_token VARCHAR(100)',
+        'ALTER TABLE users ADD COLUMN reset_token_expires DATETIME',
     ]:
         try:
             from sqlalchemy import text
@@ -198,11 +217,65 @@ def create_ghl_contact(name, email, phone):
 # ─────────────────────────────────────────────
 stripe.api_key = os.environ.get('STRIPE_SECRET_KEY', '')
 STRIPE_WEBHOOK_SECRET  = os.environ.get('STRIPE_WEBHOOK_SECRET', '')
+
 STRIPE_TIER1_PRICE_ID  = 'price_1T4KkTFgw6IwkGiqFr3e1Hyi'   # $67 one-time
 STRIPE_TIER2_PRICE_ID  = 'price_1T4KkfFgw6IwkGiqFPAPHzIa'   # $67/month
 STRIPE_TIER1_LINK      = 'https://buy.stripe.com/7sYbJ16OO7n04zF39Y8og00'
 STRIPE_TIER2_LINK      = 'https://buy.stripe.com/3cIaEXgpofTwaY3eSG8og01'
 APP_BASE_URL           = os.environ.get('APP_BASE_URL', 'https://web-production-9a5f2.up.railway.app')
+
+
+# ─────────────────────────────────────────────
+#  EMAIL CONFIG (for password reset)
+# ─────────────────────────────────────────────
+SMTP_SERVER   = os.environ.get('SMTP_SERVER', 'smtp.gmail.com')
+SMTP_PORT     = int(os.environ.get('SMTP_PORT', '587'))
+SMTP_USER     = os.environ.get('SMTP_USER', '')
+SMTP_PASSWORD = os.environ.get('SMTP_PASSWORD', '')
+SMTP_FROM     = os.environ.get('SMTP_FROM', SMTP_USER)
+
+
+def send_reset_email(to_email, reset_url):
+    """Send password reset email. Silently fails if SMTP not configured."""
+    if not SMTP_USER or not SMTP_PASSWORD:
+        print(f"[DEV] Password reset URL for {to_email}: {reset_url}")
+        return False
+    try:
+        msg = MIMEMultipart('alternative')
+        msg['Subject'] = 'Reset your T2T password'
+        msg['From']    = f'Teacher to Trainer <{SMTP_FROM}>'
+        msg['To']      = to_email
+
+        text_body = f"""Hi,
+
+You requested a password reset for your Teacher to Trainer account.
+
+Click the link below to set a new password (valid for 1 hour):
+{reset_url}
+
+If you didn't request this, you can safely ignore this email.
+
+— The T2T Team"""
+
+        html_body = f"""<html><body style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:32px;background:#f5f5f5;">
+<div style="background:#201B57;padding:32px;border-radius:12px;text-align:center;">
+  <h2 style="color:#00b4c8;margin-bottom:8px;">Reset Your Password</h2>
+  <p style="color:#ccc;margin-bottom:24px;">Click the button below to set a new password. This link expires in 1 hour.</p>
+  <a href="{reset_url}" style="background:#7dc241;color:#fff;padding:14px 32px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:16px;display:inline-block;">Reset Password</a>
+  <p style="color:#888;font-size:12px;margin-top:24px;">If you didn't request this, ignore this email.</p>
+</div></body></html>"""
+
+        msg.attach(MIMEText(text_body, 'plain'))
+        msg.attach(MIMEText(html_body, 'html'))
+
+        with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
+            server.starttls()
+            server.login(SMTP_USER, SMTP_PASSWORD)
+            server.sendmail(SMTP_FROM, to_email, msg.as_string())
+        return True
+    except Exception as e:
+        print(f"[EMAIL ERROR] {e}")
+        return False
 
 
 # ─────────────────────────────────────────────
@@ -541,6 +614,52 @@ def me():
         session.pop('user_id', None)
         return jsonify({'user': None})
     return jsonify({'user': user.to_dict()})
+
+
+@app.route('/api/auth/forgot-password', methods=['POST'])
+def forgot_password():
+    from datetime import timedelta
+    data  = request.json or {}
+    email = data.get('email', '').strip().lower()
+    if not email:
+        return jsonify({'error': 'Email is required.'}), 400
+
+    user = User.query.filter_by(email=email).first()
+    # Always return success to prevent email enumeration
+    if user:
+        token = secrets.token_urlsafe(32)
+        user.reset_token         = token
+        user.reset_token_expires = datetime.utcnow() + timedelta(hours=1)
+        db.session.commit()
+        reset_url = f"{APP_BASE_URL}/?reset_token={token}"
+        send_reset_email(email, reset_url)
+
+    return jsonify({'success': True, 'message': 'If that email is registered, a reset link has been sent.'})
+
+
+@app.route('/api/auth/reset-password', methods=['POST'])
+def reset_password():
+    data     = request.json or {}
+    token    = data.get('token', '').strip()
+    password = data.get('password', '')
+
+    if not token or not password:
+        return jsonify({'error': 'Token and password are required.'}), 400
+    if len(password) < 6:
+        return jsonify({'error': 'Password must be at least 6 characters.'}), 400
+
+    user = User.query.filter_by(reset_token=token).first()
+    if not user or not user.reset_token_expires or user.reset_token_expires < datetime.utcnow():
+        return jsonify({'error': 'This reset link is invalid or has expired. Please request a new one.'}), 400
+
+    user.set_password(password)
+    user.reset_token         = None
+    user.reset_token_expires = None
+    db.session.commit()
+
+    # Log them in automatically
+    session['user_id'] = user.id
+    return jsonify({'success': True, 'user': user.to_dict()})
 
 
 # ─────────────────────────────────────────────
