@@ -92,8 +92,9 @@
   --bg: #0f1117;
   --bg2: #161b27;
   --bg3: #1e2535;
-  --accent: #4f8ef7;
-  --accent2: #6c63ff;
+  --accent: #00b4c8;
+  --accent2: #7dc241;
+  --accent-hover: #009aab;
   --success: #34d399;
   --warn: #f59e0b;
   --text: #e8eaf0;
@@ -145,27 +146,21 @@ body { display: flex; height: 100vh; }
 
 .logo {
   display: flex;
-  flex-direction: column;
-  gap: 2px;
+  align-items: center;
+  padding: 4px 0;
 }
 
-.logo-mark {
-  font-size: 26px;
-  font-weight: 700;
-  letter-spacing: -0.5px;
-  background: linear-gradient(135deg, var(--accent), var(--accent2));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+.sidebar-logo-img {
+  width: 100%;
+  max-width: 200px;
+  height: auto;
+  object-fit: contain;
+  filter: brightness(1.05);
 }
 
-.logo-sub {
-  font-size: 11px;
-  font-weight: 500;
-  color: var(--text3);
-  text-transform: uppercase;
-  letter-spacing: 0.8px;
-}
+/* Keep these for any residual markup */
+.logo-mark { display: none; }
+.logo-sub  { display: none; }
 
 /* ── Sidebar Sections ── */
 .sidebar-section {
@@ -857,11 +852,16 @@ body { display: flex; height: 100vh; }
   margin-bottom: 32px;
 }
 
+.auth-logo-img {
+  width: 200px;
+  height: auto;
+  object-fit: contain;
+  filter: brightness(1.05);
+  margin-bottom: 4px;
+}
+
 .auth-logo-mark {
-  font-size: 2rem;
-  font-weight: 700;
-  color: var(--accent);
-  letter-spacing: 2px;
+  display: none;
 }
 
 .auth-logo-sub {
@@ -1084,7 +1084,7 @@ body { display: flex; height: 100vh; }
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  color: #8b5cf6;
+  color: #00b4c8;
   margin: 0 0 0.4rem;
 }
 
@@ -1120,7 +1120,7 @@ body { display: flex; height: 100vh; }
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: #8b5cf6;
+  color: #00b4c8;
   margin-bottom: 0.35rem;
 }
 .onboarding-example-prompt {
@@ -1146,7 +1146,7 @@ body { display: flex; height: 100vh; }
   cursor: pointer;
 }
 .onboarding-dot.active {
-  background: #8b5cf6;
+  background: #00b4c8;
   transform: scale(1.25);
 }
 
@@ -1155,7 +1155,7 @@ body { display: flex; height: 100vh; }
   display: block;
   width: 100%;
   padding: 0.85rem 1.5rem;
-  background: linear-gradient(135deg, #7c3aed, #8b5cf6);
+  background: linear-gradient(135deg, #009aab, #00b4c8);
   color: #fff;
   border: none;
   border-radius: 10px;
