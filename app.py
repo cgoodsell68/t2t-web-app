@@ -29,15 +29,16 @@ db = SQLAlchemy(app)
 
 class User(db.Model):
     __tablename__ = 'users'
-    id             = db.Column(db.Integer, primary_key=True)
-    email          = db.Column(db.String(255), unique=True, nullable=False, index=True)
-    name           = db.Column(db.String(200))
-    phone          = db.Column(db.String(50))
-    password_hash  = db.Column(db.String(255))
-    ghl_contact_id = db.Column(db.String(100))
-    created_at     = db.Column(db.DateTime, default=datetime.utcnow)
-    threads        = db.relationship('Thread', backref='user', lazy=True,
-                                     cascade='all, delete-orphan')
+    id                  = db.Column(db.Integer, primary_key=True)
+    email               = db.Column(db.String(255), unique=True, nullable=False, index=True)
+    name                = db.Column(db.String(200))
+    phone               = db.Column(db.String(50))
+    password_hash       = db.Column(db.String(255))
+    ghl_contact_id      = db.Column(db.String(100))
+    has_seen_onboarding = db.Column(db.Boolean, default=False, nullable=False, server_default='0')
+    created_at          = db.Column(db.DateTime, default=datetime.utcnow)
+    threads             = db.relationship('Thread', backref='user', lazy=True,
+                                          cascade='all, delete-orphan')
 
     def set_password(self, password):
         import hashlib, secrets
@@ -54,9 +55,10 @@ class User(db.Model):
 
     def to_dict(self):
         return {
-            'id':    self.id,
-            'name':  self.name,
-            'email': self.email,
+            'id':                  self.id,
+            'name':                self.name,
+            'email':               self.email,
+            'has_seen_onboarding': bool(self.has_seen_onboarding),
         }
 
 
@@ -106,9 +108,19 @@ class Message(db.Model):
         }
 
 
-# Create tables on startup
+# Create tables on startup, and run any needed column migrations
 with app.app_context():
     db.create_all()
+    # Migration: add has_seen_onboarding if it doesn't exist yet
+    try:
+        from sqlalchemy import text
+        with db.engine.connect() as conn:
+            conn.execute(text(
+                'ALTER TABLE users ADD COLUMN has_seen_onboarding BOOLEAN NOT NULL DEFAULT 0'
+            ))
+            conn.commit()
+    except Exception:
+        pass  # Column already exists — safe to ignore
 
 
 # ─────────────────────────────────────────────
@@ -347,6 +359,17 @@ def login():
 
     session['user_id'] = user.id
     return jsonify({'success': True, 'user': user.to_dict()})
+
+
+@app.route('/api/complete-onboarding', methods=['POST'])
+@login_required
+def complete_onboarding():
+    user_id = session['user_id']
+    user = User.query.get(user_id)
+    if user:
+        user.has_seen_onboarding = True
+        db.session.commit()
+    return jsonify({'success': True})
 
 
 @app.route('/api/auth/logout', methods=['POST'])

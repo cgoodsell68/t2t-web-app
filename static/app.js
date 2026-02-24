@@ -73,6 +73,56 @@ document.getElementById('showLogin').addEventListener('click', (e) => {
   signupErrorEl.style.display = 'none';
 });
 
+// ── Onboarding Modal ──
+const onboardingOverlayEl = document.getElementById('onboardingOverlay');
+const onboardingNextBtn   = document.getElementById('onboardingNext');
+const onboardingSkipBtn   = document.getElementById('onboardingSkip');
+const onboardingSlides    = document.querySelectorAll('.onboarding-slide');
+const onboardingDots      = document.querySelectorAll('.onboarding-dot');
+let currentSlide = 0;
+const TOTAL_SLIDES = onboardingSlides.length;
+
+function showOnboarding() {
+  currentSlide = 0;
+  updateSlide();
+  onboardingOverlayEl.style.display = 'flex';
+}
+
+function hideOnboarding() {
+  onboardingOverlayEl.style.display = 'none';
+  completeOnboarding();
+}
+
+function updateSlide() {
+  onboardingSlides.forEach((s, i) => s.classList.toggle('active', i === currentSlide));
+  onboardingDots.forEach((d, i) => d.classList.toggle('active', i === currentSlide));
+  onboardingNextBtn.textContent = currentSlide === TOTAL_SLIDES - 1 ? 'Get Started ✦' : 'Next →';
+}
+
+onboardingNextBtn.addEventListener('click', () => {
+  if (currentSlide < TOTAL_SLIDES - 1) {
+    currentSlide++;
+    updateSlide();
+  } else {
+    hideOnboarding();
+  }
+});
+
+onboardingSkipBtn.addEventListener('click', hideOnboarding);
+
+// Clicking dots jumps to that slide
+onboardingDots.forEach((dot, i) => {
+  dot.addEventListener('click', () => { currentSlide = i; updateSlide(); });
+});
+
+async function completeOnboarding() {
+  try {
+    await fetch('/api/complete-onboarding', { method: 'POST' });
+  } catch (e) {
+    // Non-blocking — if it fails, it'll just show again next time
+  }
+}
+
 // ── Auth: Show / Hide Screens ──
 function showApp(user) {
   currentUser = user;
@@ -80,6 +130,10 @@ function showApp(user) {
   mainAppEl.style.display     = 'flex';
   userNameEl.textContent      = user.name || user.email;
   loadThreads();
+  // Show onboarding for brand-new users who haven't seen it yet
+  if (user.has_seen_onboarding === false) {
+    showOnboarding();
+  }
 }
 
 function showAuth() {

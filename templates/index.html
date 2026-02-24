@@ -82,6 +82,62 @@
   </div>
 
   <!-- ══════════════════════════════════════════ -->
+  <!-- WELCOME ONBOARDING MODAL (first login)    -->
+  <!-- ══════════════════════════════════════════ -->
+  <div class="onboarding-overlay" id="onboardingOverlay" style="display:none;">
+    <div class="onboarding-modal">
+
+      <!-- Skip link -->
+      <button class="onboarding-skip" id="onboardingSkip">Skip</button>
+
+      <!-- ── SLIDE 1: Chat Mode ── -->
+      <div class="onboarding-slide active" data-slide="0">
+        <div class="onboarding-icon">💬</div>
+        <p class="onboarding-welcome-label">Welcome to T2T!</p>
+        <h2 class="onboarding-title">Chat Mode</h2>
+        <p class="onboarding-body">Get expert consulting advice on training design, instructional strategy, curriculum architecture, and career guidance. Just ask a question and T2T responds like a senior L&amp;D consultant.</p>
+        <div class="onboarding-example">
+          <span class="onboarding-example-label">Try asking:</span>
+          <span class="onboarding-example-prompt">"How do I design a blended learning programme for new managers?"</span>
+        </div>
+      </div>
+
+      <!-- ── SLIDE 2: Document Mode ── -->
+      <div class="onboarding-slide" data-slide="1">
+        <div class="onboarding-icon">📄</div>
+        <h2 class="onboarding-title">Create Professional Documents</h2>
+        <p class="onboarding-body">Generate complete training documents — lesson plans, TNA reports, RFP responses, evaluation frameworks, and more. T2T builds full structured documents ready to use.</p>
+        <div class="onboarding-example">
+          <span class="onboarding-example-label">Try asking:</span>
+          <span class="onboarding-example-prompt">"Create a Training Needs Analysis for onboarding new sales reps"</span>
+        </div>
+      </div>
+
+      <!-- ── SLIDE 3: Research Mode ── -->
+      <div class="onboarding-slide" data-slide="2">
+        <div class="onboarding-icon">🔍</div>
+        <h2 class="onboarding-title">Research with Live Sources</h2>
+        <p class="onboarding-body">Get research-backed answers with live web sources. Perfect for staying current on L&amp;D trends, compliance updates, and evidence-based practice.</p>
+        <div class="onboarding-example">
+          <span class="onboarding-example-label">Try asking:</span>
+          <span class="onboarding-example-prompt">"What are the latest trends in microlearning for 2026?"</span>
+        </div>
+      </div>
+
+      <!-- Dot indicators -->
+      <div class="onboarding-dots">
+        <span class="onboarding-dot active" data-dot="0"></span>
+        <span class="onboarding-dot" data-dot="1"></span>
+        <span class="onboarding-dot" data-dot="2"></span>
+      </div>
+
+      <!-- Next / Get Started button -->
+      <button class="onboarding-next-btn" id="onboardingNext">Next →</button>
+
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════ -->
   <!-- MAIN APP (shown after login)              -->
   <!-- ══════════════════════════════════════════ -->
 
