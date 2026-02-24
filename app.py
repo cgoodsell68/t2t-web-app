@@ -1031,6 +1031,23 @@ def get_user_tier():
     return jsonify({'tier': user.tier if user else 0})
 
 
+@app.route('/api/admin/set-tier', methods=['POST'])
+def admin_set_tier():
+    """Admin endpoint to manually set a user's tier. Protected by SECRET_KEY."""
+    data = request.get_json()
+    secret = data.get('secret', '')
+    if secret != app.secret_key:
+        return jsonify({'error': 'Unauthorized'}), 401
+    email = data.get('email')
+    tier = data.get('tier')
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+    user.tier = tier
+    db.session.commit()
+    return jsonify({'success': True, 'email': user.email, 'tier': user.tier})
+
+
 # ─────────────────────────────────────────────
 #  ENTRYPOINT
 # ─────────────────────────────────────────────
