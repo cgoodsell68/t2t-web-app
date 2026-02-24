@@ -462,6 +462,7 @@ body { display: flex; height: 100vh; }
 .msg-mode-badge.research { color: var(--warn); }
 .msg-mode-badge.document { color: var(--success); }
 .msg-mode-badge.chat     { color: var(--accent); }
+.msg-mode-badge.career   { color: var(--accent2); }
 
 /* ── Markdown Rendering ── */
 .bubble h1, .bubble h2, .bubble h3, .bubble h4 {
@@ -1187,4 +1188,201 @@ body { display: flex; height: 100vh; }
   .onboarding-icon {
     font-size: 2.5rem;
   }
+}
+
+/* ─── CAREER CLARITY MODE ─── */
+
+/* Career Hook Overlay */
+.career-hook-overlay {
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(135deg, #14113a 0%, #201B57 50%, #0d2a3a 100%);
+  z-index: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+
+.career-hook-overlay.hidden {
+  display: none;
+}
+
+.career-hook-content {
+  text-align: center;
+  max-width: 480px;
+  animation: fadeInUp 0.6s ease;
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.career-hook-logo {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  margin-bottom: 1.5rem;
+}
+
+.career-hook-badge {
+  display: inline-block;
+  background: rgba(0, 180, 200, 0.15);
+  border: 1px solid rgba(0, 180, 200, 0.4);
+  color: var(--accent);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 0.35rem 0.9rem;
+  border-radius: 20px;
+  margin-bottom: 1.5rem;
+}
+
+.career-hook-headline {
+  font-size: 2.8rem;
+  font-weight: 800;
+  line-height: 1.1;
+  color: #fff;
+  margin-bottom: 1.25rem;
+  letter-spacing: -0.02em;
+}
+
+.career-hook-body {
+  color: rgba(255,255,255,0.75);
+  font-size: 1.05rem;
+  line-height: 1.6;
+  margin-bottom: 1.75rem;
+}
+
+.career-hook-price-block {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-bottom: 1.75rem;
+}
+
+.career-hook-price {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--accent2);
+}
+
+.career-hook-was {
+  font-size: 1rem;
+  color: rgba(255,255,255,0.4);
+  text-decoration: line-through;
+}
+
+.career-hook-tag {
+  background: rgba(125, 194, 65, 0.2);
+  border: 1px solid rgba(125, 194, 65, 0.4);
+  color: var(--accent2);
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 0.25rem 0.6rem;
+  border-radius: 12px;
+}
+
+.btn-career-start {
+  display: block;
+  width: 100%;
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  padding: 1rem 2rem;
+  font-size: 1.1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  margin-bottom: 1rem;
+  letter-spacing: 0.01em;
+}
+
+.btn-career-start:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 180, 200, 0.35);
+}
+
+.career-hook-note {
+  color: rgba(255,255,255,0.45);
+  font-size: 0.82rem;
+  margin: 0;
+}
+
+/* Career mode button */
+.mode-btn-career {
+  position: relative;
+  background: linear-gradient(135deg, rgba(0,180,200,0.12) 0%, rgba(125,194,65,0.12) 100%) !important;
+  border: 1px solid rgba(0, 180, 200, 0.3) !important;
+}
+
+.mode-btn-career.active,
+.mode-btn-career:hover {
+  background: linear-gradient(135deg, rgba(0,180,200,0.25) 0%, rgba(125,194,65,0.25) 100%) !important;
+  border-color: var(--accent) !important;
+}
+
+.mode-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  background: var(--accent2);
+  color: #fff;
+  font-size: 0.55rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  padding: 0.15rem 0.4rem;
+  border-radius: 8px;
+  text-transform: uppercase;
+}
+
+/* Career Progress Bar */
+.career-progress {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 1.25rem;
+  background: rgba(0, 180, 200, 0.06);
+  border-bottom: 1px solid rgba(0, 180, 200, 0.12);
+}
+
+.career-progress.hidden {
+  display: none;
+}
+
+.career-progress-track {
+  flex: 1;
+  height: 4px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.career-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent) 0%, var(--accent2) 100%);
+  border-radius: 4px;
+  transition: width 0.5s ease;
+  width: 0%;
+}
+
+.career-progress-label {
+  font-size: 0.75rem;
+  color: var(--accent);
+  font-weight: 600;
+  white-space: nowrap;
+  min-width: 100px;
+  text-align: right;
+}
+
+/* Career Report Styling - make the final output pop */
+.message.assistant .career-report {
+  border-left: 3px solid var(--accent);
+  padding-left: 1rem;
 }
