@@ -1,10 +1,78 @@
 from flask import Flask, render_template, request, jsonify, session
+from flask_sqlalchemy import SQLAlchemy
 from openai import OpenAI
+from datetime import datetime
 import os
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'change-this-in-production-please')
 
+# ─────────────────────────────────────────────
+#  DATABASE SETUP
+# ─────────────────────────────────────────────
+database_url = os.environ.get('DATABASE_URL', 'sqlite:///t2t.db')
+# Railway/Heroku provide postgres:// but SQLAlchemy needs postgresql://
+if database_url.startswith('postgres://'):
+    database_url = database_url.replace('postgres://', 'postgresql://', 1)
+
+app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+db = SQLAlchemy(app)
+
+
+class Thread(db.Model):
+    __tablename__ = 'threads'
+    id         = db.Column(db.Integer, primary_key=True)
+    title      = db.Column(db.String(200), nullable=False, default='New Conversation')
+    mode       = db.Column(db.String(20), default='chat')
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow)
+    messages   = db.relationship(
+        'Message', backref='thread', lazy=True,
+        cascade='all, delete-orphan',
+        order_by='Message.created_at'
+    )
+
+    def to_dict(self, include_messages=False):
+        d = {
+            'id':         self.id,
+            'title':      self.title,
+            'mode':       self.mode,
+            'created_at': self.created_at.isoformat(),
+            'updated_at': self.updated_at.isoformat(),
+        }
+        if include_messages:
+            d['messages'] = [m.to_dict() for m in self.messages]
+        return d
+
+
+class Message(db.Model):
+    __tablename__ = 'messages'
+    id         = db.Column(db.Integer, primary_key=True)
+    thread_id  = db.Column(db.Integer, db.ForeignKey('threads.id'), nullable=False)
+    role       = db.Column(db.String(20), nullable=False)   # 'user' | 'assistant'
+    content    = db.Column(db.Text, nullable=False)
+    mode       = db.Column(db.String(20), default='chat')
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            'id':         self.id,
+            'role':       self.role,
+            'content':    self.content,
+            'mode':       self.mode,
+            'created_at': self.created_at.isoformat(),
+        }
+
+
+# Create tables on startup
+with app.app_context():
+    db.create_all()
+
+# ─────────────────────────────────────────────
+#  OPENAI CLIENT
+# ─────────────────────────────────────────────
 client = OpenAI(api_key=os.environ.get('OPENAI_API_KEY'))
 
 # ─────────────────────────────────────────────
@@ -77,90 +145,166 @@ You are in RESEARCH MODE. You have access to live web search.
 - Combine retrieved information with your expert knowledge
 - Produce a structured, well-evidenced response"""
 
+
 # ─────────────────────────────────────────────
-#  ROUTES
+#  HELPERS
+# ─────────────────────────────────────────────
+
+def make_thread_title(text):
+    """Generate a short title from the first user message."""
+    text = text.strip()
+    return (text[:60] + '…') if len(text) > 60 else text
+
+
+# ─────────────────────────────────────────────
+#  ROUTES — PAGES
 # ─────────────────────────────────────────────
 
 @app.route('/')
 def index():
-    if 'conversation' not in session:
-        session['conversation'] = []
     return render_template('index.html')
 
 
+# ─────────────────────────────────────────────
+#  ROUTES — THREADS
+# ─────────────────────────────────────────────
+
+@app.route('/api/threads', methods=['GET'])
+def list_threads():
+    threads = Thread.query.order_by(Thread.updated_at.desc()).all()
+    return jsonify({'threads': [t.to_dict() for t in threads]})
+
+
+@app.route('/api/threads', methods=['POST'])
+def create_thread():
+    data  = request.json or {}
+    title = data.get('title', 'New Conversation')
+    mode  = data.get('mode', 'chat')
+    t = Thread(title=title, mode=mode)
+    db.session.add(t)
+    db.session.commit()
+    return jsonify({'thread': t.to_dict()}), 201
+
+
+@app.route('/api/threads/<int:thread_id>', methods=['GET'])
+def get_thread(thread_id):
+    t = Thread.query.get_or_404(thread_id)
+    return jsonify({'thread': t.to_dict(include_messages=True)})
+
+
+@app.route('/api/threads/<int:thread_id>', methods=['PUT'])
+def rename_thread(thread_id):
+    t = Thread.query.get_or_404(thread_id)
+    data = request.json or {}
+    if 'title' in data:
+        t.title = data['title'][:200]
+        t.updated_at = datetime.utcnow()
+        db.session.commit()
+    return jsonify({'thread': t.to_dict()})
+
+
+@app.route('/api/threads/<int:thread_id>', methods=['DELETE'])
+def delete_thread(thread_id):
+    t = Thread.query.get_or_404(thread_id)
+    db.session.delete(t)
+    db.session.commit()
+    return jsonify({'success': True})
+
+
+# ─────────────────────────────────────────────
+#  ROUTES — CHAT
+# ─────────────────────────────────────────────
+
 @app.route('/api/chat', methods=['POST'])
 def chat():
-    data = request.json
+    data         = request.json
     user_message = data.get('message', '').strip()
-    mode = data.get('mode', 'chat')  # chat | document | research
+    mode         = data.get('mode', 'chat')
+    thread_id    = data.get('thread_id')      # None = start a new thread
 
     if not user_message:
         return jsonify({'success': False, 'error': 'No message provided'}), 400
 
-    if 'conversation' not in session:
-        session['conversation'] = []
+    # ── Get or create thread ──
+    if thread_id:
+        thread = Thread.query.get(thread_id)
+        if not thread:
+            return jsonify({'success': False, 'error': 'Thread not found'}), 404
+    else:
+        thread = Thread(
+            title=make_thread_title(user_message),
+            mode=mode,
+        )
+        db.session.add(thread)
+        db.session.flush()   # get id before commit
 
-    # Add user message
-    session['conversation'].append({'role': 'user', 'content': user_message})
+    # ── Persist user message ──
+    user_msg = Message(thread_id=thread.id, role='user', content=user_message, mode=mode)
+    db.session.add(user_msg)
+
+    # ── Build conversation history for the API ──
+    history = Message.query.filter_by(thread_id=thread.id).order_by(Message.created_at).all()
+    # Include up to last 20 messages (excluding the one we just added)
+    past = [{'role': m.role, 'content': m.content} for m in history[-20:]]
 
     try:
         if mode == 'research':
-            # Responses API with web search
             system = SYSTEM_PROMPT + RESEARCH_SUFFIX
-            input_messages = [{'role': 'system', 'content': system}]
-            input_messages += [
-                {'role': m['role'], 'content': m['content']}
-                for m in session['conversation'][-12:]
-            ]
+            input_messages = [{'role': 'system', 'content': system}] + past
             response = client.responses.create(
                 model='gpt-4o',
                 tools=[{'type': 'web_search_preview'}],
                 input=input_messages,
             )
-            assistant_message = response.output_text
+            assistant_text = response.output_text
 
         else:
-            # Chat Completions API
             system = SYSTEM_PROMPT
             if mode == 'document':
                 system += DOCUMENT_SUFFIX
 
-            messages = [{'role': 'system', 'content': system}]
-            messages += [
-                {'role': m['role'], 'content': m['content']}
-                for m in session['conversation'][-20:]
-            ]
-
+            messages = [{'role': 'system', 'content': system}] + past
             completion = client.chat.completions.create(
                 model='gpt-4o',
                 messages=messages,
                 max_tokens=4096 if mode == 'document' else 2048,
                 temperature=0.7,
             )
-            assistant_message = completion.choices[0].message.content
+            assistant_text = completion.choices[0].message.content
 
-        # Store assistant reply
-        session['conversation'].append({'role': 'assistant', 'content': assistant_message})
-        session.modified = True
+        # ── Persist assistant reply ──
+        asst_msg = Message(thread_id=thread.id, role='assistant', content=assistant_text, mode=mode)
+        db.session.add(asst_msg)
+        thread.updated_at = datetime.utcnow()
+        db.session.commit()
 
-        return jsonify({'success': True, 'message': assistant_message, 'mode': mode})
+        return jsonify({
+            'success':   True,
+            'message':   assistant_text,
+            'mode':      mode,
+            'thread_id': thread.id,
+            'thread':    thread.to_dict(),
+        })
 
     except Exception as e:
+        db.session.rollback()
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
 @app.route('/api/clear', methods=['POST'])
 def clear():
-    session['conversation'] = []
-    session.modified = True
+    """Legacy endpoint — kept for compatibility. Frontend now uses thread system."""
     return jsonify({'success': True})
 
 
-@app.route('/api/history', methods=['GET'])
-def history():
-    return jsonify({'conversation': session.get('conversation', [])})
-
+# ─────────────────────────────────────────────
+#  ENTRYPOINT
+# ─────────────────────────────────────────────
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
-    app.run(debug=os.environ.get('FLASK_DEBUG', 'false').lower() == 'true', host='0.0.0.0', port=port)
+    app.run(
+        debug=os.environ.get('FLASK_DEBUG', 'false').lower() == 'true',
+        host='0.0.0.0',
+        port=port,
+    )

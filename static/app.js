@@ -18,26 +18,26 @@ const thinkingLabels = {
   research: 'Searching the web…',
 };
 
-let currentMode = 'chat';
-let isLoading = false;
+let currentMode     = 'chat';
+let currentThreadId = null;   // null = start a fresh thread on next message
+let isLoading       = false;
 
 // ── Elements ──
-const messagesEl    = document.getElementById('messages');
-const inputEl       = document.getElementById('userInput');
-const sendBtn       = document.getElementById('sendBtn');
-const clearBtn      = document.getElementById('clearBtn');
-const exportBtn     = document.getElementById('exportBtn');
-const thinkingEl    = document.getElementById('thinking');
-const thinkingLabel = document.getElementById('thinkingLabel');
-const modeBadgeEl   = document.getElementById('currentModeBadge');
-const modeDescEl    = document.getElementById('modeDescription');
-const welcomeEl     = document.getElementById('welcomeScreen');
+const messagesEl       = document.getElementById('messages');
+const inputEl          = document.getElementById('userInput');
+const sendBtn          = document.getElementById('sendBtn');
+const clearBtn         = document.getElementById('clearBtn');
+const exportBtn        = document.getElementById('exportBtn');
+const thinkingEl       = document.getElementById('thinking');
+const thinkingLabel    = document.getElementById('thinkingLabel');
+const modeBadgeEl      = document.getElementById('currentModeBadge');
+const modeDescEl       = document.getElementById('modeDescription');
+const welcomeEl        = document.getElementById('welcomeScreen');
+const threadListEl     = document.getElementById('threadList');
+const threadTitleEl    = document.getElementById('currentThreadTitle');
 
 // ── Configure marked.js ──
-marked.setOptions({
-  breaks: true,
-  gfm: true,
-});
+marked.setOptions({ breaks: true, gfm: true });
 
 // ── Mode Switching ──
 document.querySelectorAll('.mode-btn').forEach(btn => {
@@ -58,7 +58,6 @@ document.querySelectorAll('.starter-btn').forEach(btn => {
     inputEl.focus();
     autoResize();
     updateSendBtn();
-    // If prompt ends with colon+space, don't auto-send — let user complete it
     if (!prompt.endsWith(': ')) {
       sendMessage();
     }
@@ -66,11 +65,7 @@ document.querySelectorAll('.starter-btn').forEach(btn => {
 });
 
 // ── Input Handling ──
-inputEl.addEventListener('input', () => {
-  autoResize();
-  updateSendBtn();
-});
-
+inputEl.addEventListener('input', () => { autoResize(); updateSendBtn(); });
 inputEl.addEventListener('keydown', (e) => {
   if (e.key === 'Enter' && !e.shiftKey) {
     e.preventDefault();
@@ -89,13 +84,17 @@ function updateSendBtn() {
 
 sendBtn.addEventListener('click', () => { if (!isLoading) sendMessage(); });
 
-// ── Clear ──
-clearBtn.addEventListener('click', async () => {
-  await fetch('/api/clear', { method: 'POST' });
+// ── New Conversation ──
+clearBtn.addEventListener('click', startNewConversation);
+
+function startNewConversation() {
+  currentThreadId = null;
   messagesEl.innerHTML = '';
   messagesEl.appendChild(welcomeEl);
   welcomeEl.style.display = 'flex';
-});
+  threadTitleEl.textContent = '';
+  document.querySelectorAll('.thread-item').forEach(el => el.classList.remove('active'));
+}
 
 // ── Export ──
 exportBtn.addEventListener('click', exportConversation);
@@ -138,12 +137,26 @@ async function sendMessage() {
     const res = await fetch('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: text, mode: currentMode }),
+      body: JSON.stringify({
+        message:   text,
+        mode:      currentMode,
+        thread_id: currentThreadId,
+      }),
     });
 
     const data = await res.json();
 
     if (data.success) {
+      // Update thread tracking
+      if (!currentThreadId) {
+        currentThreadId = data.thread_id;
+      }
+      // Refresh thread list and highlight active thread
+      await loadThreads();
+      updateActiveThread(currentThreadId);
+      if (data.thread) {
+        threadTitleEl.textContent = data.thread.title;
+      }
       addMessage('assistant', data.message, data.mode);
     } else {
       addMessage('assistant', `⚠️ Error: ${data.error || 'Something went wrong. Please try again.'}`, currentMode);
@@ -191,6 +204,87 @@ function addMessage(role, text, mode) {
   scrollToBottom();
 }
 
+// ── Thread List ──
+async function loadThreads() {
+  try {
+    const res     = await fetch('/api/threads');
+    const data    = await res.json();
+    const threads = data.threads || [];
+
+    threadListEl.innerHTML = '';
+
+    if (threads.length === 0) {
+      threadListEl.innerHTML = '<p class="thread-empty">No conversations yet</p>';
+      return;
+    }
+
+    threads.forEach(thread => {
+      const item = document.createElement('div');
+      item.className = 'thread-item';
+      item.dataset.id = thread.id;
+      if (thread.id === currentThreadId) item.classList.add('active');
+
+      const title = document.createElement('span');
+      title.className = 'thread-title';
+      title.textContent = thread.title;
+
+      const deleteBtn = document.createElement('button');
+      deleteBtn.className = 'thread-delete';
+      deleteBtn.title = 'Delete this conversation';
+      deleteBtn.textContent = '×';
+      deleteBtn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        await deleteThread(thread.id);
+      });
+
+      item.appendChild(title);
+      item.appendChild(deleteBtn);
+      item.addEventListener('click', () => loadThread(thread.id));
+      threadListEl.appendChild(item);
+    });
+  } catch (err) {
+    console.error('Failed to load threads:', err);
+  }
+}
+
+async function loadThread(threadId) {
+  try {
+    const res  = await fetch(`/api/threads/${threadId}`);
+    const data = await res.json();
+    const t    = data.thread;
+
+    currentThreadId = threadId;
+    threadTitleEl.textContent = t.title;
+
+    messagesEl.innerHTML = '';
+    welcomeEl.style.display = 'none';
+
+    t.messages.forEach(m => addMessage(m.role, m.content, m.mode));
+    updateActiveThread(threadId);
+    scrollToBottom();
+  } catch (err) {
+    console.error('Failed to load thread:', err);
+  }
+}
+
+async function deleteThread(threadId) {
+  try {
+    await fetch(`/api/threads/${threadId}`, { method: 'DELETE' });
+    if (threadId === currentThreadId) {
+      startNewConversation();
+    }
+    await loadThreads();
+  } catch (err) {
+    console.error('Failed to delete thread:', err);
+  }
+}
+
+function updateActiveThread(threadId) {
+  document.querySelectorAll('.thread-item').forEach(el => {
+    el.classList.toggle('active', parseInt(el.dataset.id) === threadId);
+  });
+}
+
 // ── Helpers ──
 function hideWelcome() {
   if (welcomeEl && welcomeEl.parentNode) {
@@ -209,3 +303,6 @@ function setLoading(loading) {
 function scrollToBottom() {
   messagesEl.scrollTop = messagesEl.scrollHeight;
 }
+
+// ── Init ──
+loadThreads();

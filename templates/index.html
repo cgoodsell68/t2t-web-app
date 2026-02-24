@@ -55,6 +55,14 @@
       </div>
     </div>
 
+    <!-- ── RECENT CHATS ── -->
+    <div class="sidebar-section history-section">
+      <p class="sidebar-label">RECENT CHATS</p>
+      <div class="thread-list" id="threadList">
+        <p class="thread-empty">No conversations yet</p>
+      </div>
+    </div>
+
     <div class="sidebar-footer">
       <button class="clear-btn" id="clearBtn">
         <span>↺</span> New Conversation
@@ -69,6 +77,7 @@
     <header class="topbar">
       <div class="topbar-left">
         <span class="current-mode-badge" id="currentModeBadge">💬 Chat Mode</span>
+        <span class="current-thread-title" id="currentThreadTitle"></span>
       </div>
       <div class="topbar-right">
         <button class="export-btn" id="exportBtn" title="Export conversation as Markdown">⬇ Export</button>
