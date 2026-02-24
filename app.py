@@ -153,13 +153,12 @@ with app.app_context():
     _seed_email = 'christopher@goilx.com'
     _seed_user = User.query.filter_by(email=_seed_email).first()
     if not _seed_user:
-        from werkzeug.security import generate_password_hash
         _seed_user = User(
             name='Christopher Goodsell',
             email=_seed_email,
-            password_hash=generate_password_hash('CharlieDog2025!!!'),
             tier=2
         )
+        _seed_user.set_password('CharlieDog2025!!!')
         db.session.add(_seed_user)
         db.session.commit()
     elif _seed_user.tier < 2:
