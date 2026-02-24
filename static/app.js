@@ -615,6 +615,13 @@ async function startCareerJourney() {
 
     const data = await resp.json();
 
+    // Handle paywall
+    if (resp.status === 403 && data.paywall) {
+      showCareerProgress(false);
+      showPaywall();
+      return;
+    }
+
     if (data.success) {
       currentThreadId = data.thread.id;
       careerQuestionNumber = 0;
@@ -671,6 +678,25 @@ function showCareerProgress(show) {
   } else {
     bar.classList.add('hidden');
   }
+}
+
+// ─────────────────────────────────────────────
+//  PAYWALL
+// ─────────────────────────────────────────────
+
+function showPaywall() {
+  const overlay = document.getElementById('paywall-overlay');
+  if (overlay) overlay.classList.remove('hidden');
+}
+
+function hidePaywall() {
+  const overlay = document.getElementById('paywall-overlay');
+  if (overlay) overlay.classList.add('hidden');
+}
+
+function goToCheckout() {
+  // Redirect to Stripe via our server (passes user ID automatically)
+  window.location.href = '/api/checkout/tier1';
 }
 
 // ── Init ──

@@ -293,12 +293,29 @@
       <h1 class="career-hook-headline">8 questions.<br>10 minutes.<br>Total clarity.</h1>
       <p class="career-hook-body">Walk away with your personalised <strong>LinkedIn Transformation Plan</strong> and your <strong>90-Day Career Clarity Roadmap</strong> — built entirely from your answers.</p>
       <div class="career-hook-price-block">
-        <span class="career-hook-price">£67</span>
-        <span class="career-hook-was">was £97</span>
+        <span class="career-hook-price">$67</span>
+        <span class="career-hook-was">was $97</span>
         <span class="career-hook-tag">Intro Offer</span>
       </div>
       <button class="btn-career-start" onclick="startCareerJourney()">Start Your 90-Day Journey →</button>
       <p class="career-hook-note">Answer 8 important questions. No prep needed.</p>
+    </div>
+  </div>
+
+  <!-- Paywall overlay — shown to free users who try to access Career Clarity Coach -->
+  <div id="paywall-overlay" class="career-hook-overlay hidden">
+    <div class="career-hook-content">
+      <img src="/static/t2t_logo_circle.png" alt="T2T" class="career-hook-logo">
+      <div class="career-hook-badge">🔒 Unlock Career Clarity Coach</div>
+      <h1 class="career-hook-headline">One payment.<br>90 days of clarity.</h1>
+      <p class="career-hook-body">Get your personalised <strong>LinkedIn Transformation Plan</strong> and <strong>90-Day Career Clarity Roadmap</strong> — built from your answers in 10 minutes.</p>
+      <div class="career-hook-price-block">
+        <span class="career-hook-price">$67</span>
+        <span class="career-hook-was">was $97</span>
+        <span class="career-hook-tag">One-Time · 90-Day Access</span>
+      </div>
+      <button class="btn-career-start" onclick="goToCheckout()">Unlock Now — $67 →</button>
+      <p class="career-hook-note" style="cursor:pointer;" onclick="hidePaywall()">← Go back</p>
     </div>
   </div>
 

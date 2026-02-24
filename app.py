@@ -1,10 +1,11 @@
-from flask import Flask, render_template, request, jsonify, session
+from flask import Flask, render_template, request, jsonify, session, redirect
 from flask_sqlalchemy import SQLAlchemy
 from openai import OpenAI
 from datetime import datetime
 from functools import wraps
 import os
 import requests as http_requests
+import stripe
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'change-this-in-production-please')
@@ -36,6 +37,8 @@ class User(db.Model):
     password_hash       = db.Column(db.String(255))
     ghl_contact_id      = db.Column(db.String(100))
     has_seen_onboarding = db.Column(db.Boolean, default=False, nullable=False, server_default='0')
+    tier                = db.Column(db.Integer, default=0, nullable=False, server_default='0')  # 0=free, 1=Tier1, 2=Tier2
+    stripe_customer_id  = db.Column(db.String(100))
     created_at          = db.Column(db.DateTime, default=datetime.utcnow)
     threads             = db.relationship('Thread', backref='user', lazy=True,
                                           cascade='all, delete-orphan')
@@ -59,6 +62,7 @@ class User(db.Model):
             'name':                self.name,
             'email':               self.email,
             'has_seen_onboarding': bool(self.has_seen_onboarding),
+            'tier':                self.tier or 0,
         }
 
 
@@ -112,15 +116,18 @@ class Message(db.Model):
 with app.app_context():
     db.create_all()
     # Migration: add has_seen_onboarding if it doesn't exist yet
-    try:
-        from sqlalchemy import text
-        with db.engine.connect() as conn:
-            conn.execute(text(
-                'ALTER TABLE users ADD COLUMN has_seen_onboarding BOOLEAN NOT NULL DEFAULT 0'
-            ))
-            conn.commit()
-    except Exception:
-        pass  # Column already exists — safe to ignore
+    for migration_sql in [
+        'ALTER TABLE users ADD COLUMN has_seen_onboarding BOOLEAN NOT NULL DEFAULT 0',
+        'ALTER TABLE users ADD COLUMN tier INTEGER NOT NULL DEFAULT 0',
+        'ALTER TABLE users ADD COLUMN stripe_customer_id VARCHAR(100)',
+    ]:
+        try:
+            from sqlalchemy import text
+            with db.engine.connect() as conn:
+                conn.execute(text(migration_sql))
+                conn.commit()
+        except Exception:
+            pass  # Column already exists — safe to ignore
 
 
 # ─────────────────────────────────────────────
@@ -184,6 +191,18 @@ def create_ghl_contact(name, email, phone):
         return None
     except Exception:
         return None
+
+
+# ─────────────────────────────────────────────
+#  STRIPE CONFIG
+# ─────────────────────────────────────────────
+stripe.api_key = os.environ.get('STRIPE_SECRET_KEY', '')
+STRIPE_WEBHOOK_SECRET  = os.environ.get('STRIPE_WEBHOOK_SECRET', '')
+STRIPE_TIER1_PRICE_ID  = 'price_1T4KkTFgw6IwkGiqFr3e1Hyi'   # $67 one-time
+STRIPE_TIER2_PRICE_ID  = 'price_1T4KkfFgw6IwkGiqFPAPHzIa'   # $67/month
+STRIPE_TIER1_LINK      = 'https://buy.stripe.com/7sYbJ16OO7n04zF39Y8og00'
+STRIPE_TIER2_LINK      = 'https://buy.stripe.com/3cIaEXgpofTwaY3eSG8og01'
+APP_BASE_URL           = os.environ.get('APP_BASE_URL', 'https://web-production-9a5f2.up.railway.app')
 
 
 # ─────────────────────────────────────────────
@@ -599,6 +618,17 @@ def chat():
     if not user_message:
         return jsonify({'success': False, 'error': 'No message provided'}), 400
 
+    # ── Paywall check for career mode ──
+    if mode == 'career':
+        user = User.query.get(user_id)
+        if not user or user.tier < 1:
+            return jsonify({
+                'success':  False,
+                'paywall':  True,
+                'error':    'Career Clarity Coach requires Tier 1 access.',
+                'checkout': '/api/checkout/tier1',
+            }), 403
+
     # ── Get or create thread ──
     if thread_id:
         thread = Thread.query.filter_by(id=thread_id, user_id=user_id).first()
@@ -708,6 +738,16 @@ def clear():
 def career_start():
     """Create a new career clarity thread and get the opening message from the AI."""
     user_id = session['user_id']
+    user    = User.query.get(user_id)
+
+    # Paywall — Tier 1 or above required
+    if not user or user.tier < 1:
+        return jsonify({
+            'success':  False,
+            'paywall':  True,
+            'error':    'Career Clarity Coach requires Tier 1 access.',
+            'checkout': '/api/checkout/tier1',
+        }), 403
 
     thread = Thread(
         title='Career Clarity Journey',
@@ -750,6 +790,120 @@ def career_start():
     except Exception as e:
         db.session.rollback()
         return jsonify({'success': False, 'error': str(e)}), 500
+
+
+# ─────────────────────────────────────────────
+#  ROUTES — STRIPE CHECKOUT & WEBHOOK
+# ─────────────────────────────────────────────
+
+@app.route('/api/checkout/tier1')
+@login_required
+def checkout_tier1():
+    """Redirect logged-in user to Stripe payment link with their user ID attached."""
+    user_id = session['user_id']
+    url = f"{STRIPE_TIER1_LINK}?client_reference_id={user_id}&prefilled_email={_get_user_email(user_id)}"
+    return redirect(url)
+
+
+@app.route('/api/checkout/tier2')
+@login_required
+def checkout_tier2():
+    """Redirect logged-in user to Stripe Tier 2 payment link."""
+    user_id = session['user_id']
+    url = f"{STRIPE_TIER2_LINK}?client_reference_id={user_id}&prefilled_email={_get_user_email(user_id)}"
+    return redirect(url)
+
+
+def _get_user_email(user_id):
+    user = User.query.get(user_id)
+    return user.email if user else ''
+
+
+@app.route('/api/stripe/webhook', methods=['POST'])
+def stripe_webhook():
+    """Stripe sends payment events here. We upgrade user tier on success."""
+    payload    = request.get_data()
+    sig_header = request.headers.get('Stripe-Signature', '')
+
+    try:
+        if STRIPE_WEBHOOK_SECRET:
+            event = stripe.Webhook.construct_event(payload, sig_header, STRIPE_WEBHOOK_SECRET)
+        else:
+            # Dev mode — trust the payload directly (never in production)
+            import json
+            event = json.loads(payload)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 400
+
+    event_type = event.get('type') if isinstance(event, dict) else event['type']
+
+    if event_type == 'checkout.session.completed':
+        session_obj = event['data']['object']
+        client_ref  = session_obj.get('client_reference_id')  # our user_id
+        customer_id = session_obj.get('customer')
+        mode        = session_obj.get('mode')          # 'payment' or 'subscription'
+        price_id    = None
+
+        # Get price from line items
+        line_items = session_obj.get('line_items', {}).get('data', [])
+        if line_items:
+            price_id = line_items[0].get('price', {}).get('id')
+        else:
+            # Fallback: check metadata or amount
+            price_id = session_obj.get('metadata', {}).get('price_id')
+
+        if client_ref:
+            try:
+                user = User.query.get(int(client_ref))
+                if user:
+                    if customer_id:
+                        user.stripe_customer_id = customer_id
+                    # Determine tier from mode
+                    if mode == 'subscription':
+                        user.tier = 2
+                    else:
+                        user.tier = 1
+                    db.session.commit()
+
+                    # Tag in GHL
+                    if user.ghl_contact_id:
+                        tag = 'T2T Tier 2' if user.tier == 2 else 'T2T Tier 1'
+                        _tag_ghl_contact(user.ghl_contact_id, tag)
+            except Exception:
+                pass  # Log silently — don't fail the webhook
+
+    elif event_type in ('customer.subscription.deleted', 'customer.subscription.paused'):
+        # Downgrade Tier 2 users if subscription cancelled
+        sub_obj     = event['data']['object']
+        customer_id = sub_obj.get('customer')
+        if customer_id:
+            user = User.query.filter_by(stripe_customer_id=customer_id).first()
+            if user and user.tier == 2:
+                user.tier = 0
+                db.session.commit()
+
+    return jsonify({'received': True}), 200
+
+
+def _tag_ghl_contact(contact_id, tag):
+    """Add a tag to a GHL contact."""
+    try:
+        http_requests.post(
+            f'{GHL_BASE}/contacts/{contact_id}/tags',
+            headers=ghl_headers(),
+            json={'tags': [tag]},
+            timeout=10,
+        )
+    except Exception:
+        pass
+
+
+@app.route('/api/user/tier', methods=['GET'])
+@login_required
+def get_user_tier():
+    """Return the current user's tier."""
+    user = User.query.get(session['user_id'])
+    return jsonify({'tier': user.tier if user else 0})
 
 
 # ─────────────────────────────────────────────
