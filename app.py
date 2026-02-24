@@ -149,6 +149,23 @@ with app.app_context():
         except Exception:
             pass  # Column already exists — safe to ignore
 
+    # Seed admin/test user — survives every redeploy
+    _seed_email = 'christopher@goilx.com'
+    _seed_user = User.query.filter_by(email=_seed_email).first()
+    if not _seed_user:
+        from werkzeug.security import generate_password_hash
+        _seed_user = User(
+            name='Christopher Goodsell',
+            email=_seed_email,
+            password=generate_password_hash('CharlieDog2025!!!'),
+            tier=2
+        )
+        db.session.add(_seed_user)
+        db.session.commit()
+    elif _seed_user.tier < 2:
+        _seed_user.tier = 2
+        db.session.commit()
+
 
 # ─────────────────────────────────────────────
 #  GHL CONFIG
