@@ -699,5 +699,124 @@ function goToCheckout() {
   window.location.href = '/api/checkout/tier1';
 }
 
+// ── Forgot Password ──
+function openForgotModal() {
+  document.getElementById('forgotModal').style.display = 'flex';
+  document.getElementById('forgotForm').style.display = 'block';
+  document.getElementById('forgotSuccess').style.display = 'none';
+  document.getElementById('forgotEmail').value = '';
+  document.getElementById('forgotError').style.display = 'none';
+  document.getElementById('forgotEmail').focus();
+}
+
+function closeForgotModal() {
+  document.getElementById('forgotModal').style.display = 'none';
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  // Forgot password link
+  const forgotLink = document.getElementById('forgotPasswordLink');
+  if (forgotLink) {
+    forgotLink.addEventListener('click', function(e) {
+      e.preventDefault();
+      openForgotModal();
+    });
+  }
+
+  // Forgot password submit
+  const forgotSubmitBtn = document.getElementById('forgotSubmitBtn');
+  if (forgotSubmitBtn) {
+    forgotSubmitBtn.addEventListener('click', async function() {
+      const email = document.getElementById('forgotEmail').value.trim();
+      const errDiv = document.getElementById('forgotError');
+      if (!email) {
+        errDiv.textContent = 'Please enter your email address.';
+        errDiv.style.display = 'block';
+        return;
+      }
+      forgotSubmitBtn.disabled = true;
+      forgotSubmitBtn.textContent = 'Sending...';
+      try {
+        const res = await fetch('/api/auth/forgot-password', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({email})
+        });
+        document.getElementById('forgotForm').style.display = 'none';
+        document.getElementById('forgotSuccess').style.display = 'block';
+      } catch(e) {
+        errDiv.textContent = 'Something went wrong. Please try again.';
+        errDiv.style.display = 'block';
+      } finally {
+        forgotSubmitBtn.disabled = false;
+        forgotSubmitBtn.textContent = 'Send Reset Link';
+      }
+    });
+  }
+
+  // Check for reset token in URL
+  const urlParams = new URLSearchParams(window.location.search);
+  let resetToken = urlParams.get('reset_token');
+  if (resetToken) {
+    document.getElementById('resetModal').style.display = 'flex';
+    // Clean URL
+    window.history.replaceState({}, document.title, '/');
+  }
+
+  // Reset password submit
+  const resetSubmitBtn = document.getElementById('resetSubmitBtn');
+  if (resetSubmitBtn) {
+    resetSubmitBtn.addEventListener('click', async function() {
+      const password = document.getElementById('resetPassword').value;
+      const confirm  = document.getElementById('resetPasswordConfirm').value;
+      const errDiv   = document.getElementById('resetError');
+
+      if (password.length < 6) {
+        errDiv.textContent = 'Password must be at least 6 characters.';
+        errDiv.style.display = 'block';
+        return;
+      }
+      if (password !== confirm) {
+        errDiv.textContent = 'Passwords do not match.';
+        errDiv.style.display = 'block';
+        return;
+      }
+
+      resetSubmitBtn.disabled = true;
+      resetSubmitBtn.textContent = 'Saving...';
+      try {
+        const res = await fetch('/api/auth/reset-password', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({token: resetToken, password})
+        });
+        const data = await res.json();
+        if (data.success) {
+          document.getElementById('resetModal').style.display = 'none';
+          // Log them in
+          if (data.user) {
+            currentUser = data.user;
+            showApp(data.user);
+          }
+        } else {
+          errDiv.textContent = data.error || 'Reset failed. Please try again.';
+          errDiv.style.display = 'block';
+        }
+      } catch(e) {
+        errDiv.textContent = 'Something went wrong. Please try again.';
+        errDiv.style.display = 'block';
+      } finally {
+        resetSubmitBtn.disabled = false;
+        resetSubmitBtn.textContent = 'Set New Password';
+      }
+    });
+  }
+
+  // Close modals on overlay click
+  document.getElementById('forgotModal')?.addEventListener('click', function(e) {
+    if (e.target === this) closeForgotModal();
+  });
+});
+
 // ── Init ──
 initAuth();
