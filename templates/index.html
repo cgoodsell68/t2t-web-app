@@ -10,8 +10,11 @@
 </head>
 <body>
 
+  <!-- ── SIDEBAR OVERLAY (mobile) ── -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
   <!-- ── SIDEBAR ── -->
-  <aside class="sidebar">
+  <aside class="sidebar" id="sidebar">
     <div class="sidebar-header">
       <div class="logo">
         <span class="logo-mark">T2T</span>
@@ -76,6 +79,9 @@
     <!-- Top bar -->
     <header class="topbar">
       <div class="topbar-left">
+        <button class="hamburger" id="hamburger" aria-label="Toggle menu">
+          <span></span><span></span><span></span>
+        </button>
         <span class="current-mode-badge" id="currentModeBadge">💬 Chat Mode</span>
         <span class="current-thread-title" id="currentThreadTitle"></span>
       </div>

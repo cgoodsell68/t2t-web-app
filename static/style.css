@@ -678,3 +678,148 @@ body { display: flex; height: 100vh; }
 ::-webkit-scrollbar { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+/* ── Hamburger Button ── */
+.hamburger {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 6px;
+  margin-right: 8px;
+  flex-shrink: 0;
+}
+.hamburger span {
+  display: block;
+  width: 20px;
+  height: 2px;
+  background: var(--text2);
+  border-radius: 2px;
+  transition: background 0.15s;
+}
+.hamburger:hover span { background: var(--text); }
+
+/* ── Sidebar Overlay (mobile) ── */
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.55);
+  z-index: 99;
+  opacity: 0;
+  transition: opacity 0.25s;
+}
+.sidebar-overlay.active {
+  display: block;
+  opacity: 1;
+}
+
+/* ── Tablet (≤1024px) ── */
+@media (max-width: 1024px) {
+  :root { --sidebar-w: 260px; }
+
+  .topbar { padding: 12px 20px; }
+  .input-area { padding: 14px 20px 18px; }
+  .message { padding: 12px 20px; }
+  .thinking { padding: 8px 20px 0; }
+  .welcome-screen { padding: 40px 28px; }
+}
+
+/* ── Mobile (≤768px) ── */
+@media (max-width: 768px) {
+  /* Show hamburger */
+  .hamburger { display: flex; }
+
+  /* Sidebar becomes full-height overlay panel */
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100%;
+    z-index: 100;
+    transform: translateX(-100%);
+    transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 4px 0 24px rgba(0,0,0,0.4);
+    /* keep width */
+    width: var(--sidebar-w);
+    min-width: var(--sidebar-w);
+  }
+
+  /* Sidebar open state */
+  .sidebar.open {
+    transform: translateX(0);
+  }
+
+  /* Main takes full width */
+  .main { width: 100%; }
+
+  /* Topbar */
+  .topbar {
+    padding: 10px 16px;
+    min-height: 50px;
+  }
+
+  .current-thread-title {
+    font-size: 12px;
+    max-width: 140px;
+  }
+
+  .export-btn {
+    padding: 5px 10px;
+    font-size: 12px;
+  }
+
+  /* Messages */
+  .message {
+    padding: 10px 14px;
+    gap: 10px;
+  }
+  .avatar { width: 30px; height: 30px; font-size: 12px; }
+  .bubble { font-size: 14px; padding: 11px 14px; }
+
+  /* Welcome screen */
+  .welcome-screen {
+    padding: 32px 20px;
+  }
+  .welcome-logo { font-size: 36px; }
+  .welcome-title { font-size: 18px; }
+  .welcome-sub { font-size: 13.5px; }
+  .welcome-chips { gap: 6px; }
+  .chip { font-size: 12px; padding: 4px 11px; }
+
+  /* Thinking */
+  .thinking { padding: 6px 14px 0; }
+
+  /* Input area */
+  .input-area { padding: 10px 14px 14px; }
+  .input-wrapper { padding: 9px 10px; }
+  .user-input { font-size: 14px; }
+  .input-hint { font-size: 10.5px; }
+  .send-btn { width: 34px; height: 34px; }
+
+  /* Markdown tables — make scrollable on small screens */
+  .bubble table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+}
+
+/* ── Small mobile (≤480px) ── */
+@media (max-width: 480px) {
+  :root { --sidebar-w: 85vw; }
+
+  .current-mode-badge { font-size: 12px; padding: 3px 10px; }
+  .current-thread-title { display: none; }
+
+  .welcome-logo { font-size: 30px; margin-bottom: 10px; }
+  .welcome-title { font-size: 16px; }
+  .welcome-sub { font-size: 13px; }
+
+  .bubble { font-size: 13.5px; }
+  .bubble h1 { font-size: 17px; }
+  .bubble h2 { font-size: 15px; }
+  .bubble h3 { font-size: 13.5px; }
+
+  .input-area { padding: 8px 10px 12px; }
+}

@@ -35,6 +35,22 @@ const modeDescEl       = document.getElementById('modeDescription');
 const welcomeEl        = document.getElementById('welcomeScreen');
 const threadListEl     = document.getElementById('threadList');
 const threadTitleEl    = document.getElementById('currentThreadTitle');
+const sidebarEl        = document.getElementById('sidebar');
+const overlayEl        = document.getElementById('sidebarOverlay');
+const hamburgerEl      = document.getElementById('hamburger');
+
+// ── Hamburger / Sidebar Toggle ──
+function openSidebar()  { sidebarEl.classList.add('open');    overlayEl.classList.add('active'); }
+function closeSidebar() { sidebarEl.classList.remove('open'); overlayEl.classList.remove('active'); }
+function toggleSidebar() { sidebarEl.classList.contains('open') ? closeSidebar() : openSidebar(); }
+
+hamburgerEl.addEventListener('click', toggleSidebar);
+overlayEl.addEventListener('click', closeSidebar);
+
+// Close sidebar when a mode button, starter, or thread is clicked (mobile UX)
+document.querySelectorAll('.mode-btn, .starter-btn').forEach(el => {
+  el.addEventListener('click', () => { if (window.innerWidth <= 768) closeSidebar(); });
+});
 
 // ── Configure marked.js ──
 marked.setOptions({ breaks: true, gfm: true });
@@ -239,7 +255,7 @@ async function loadThreads() {
 
       item.appendChild(title);
       item.appendChild(deleteBtn);
-      item.addEventListener('click', () => loadThread(thread.id));
+      item.addEventListener('click', () => { loadThread(thread.id); if (window.innerWidth <= 768) closeSidebar(); });
       threadListEl.appendChild(item);
     });
   } catch (err) {
