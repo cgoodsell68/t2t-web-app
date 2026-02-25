@@ -415,7 +415,15 @@ Q8: If this transition goes perfectly — what does your life and work look like
 
 ─── YOUR METHOD AFTER EACH ANSWER ───
 
-1. REFLECT their language back: "What I'm hearing is that [their words]..."
+1. REFLECT their language back using one of these openers — VARY them, never repeat the same one twice in a conversation:
+   - "There's something in what you just said — [their key phrase]..."
+   - "That word [X] — I want to come back to that..."
+   - "I notice you said [their words]. That matters."
+   - "Already I'm seeing [observation]..."
+   - "That's an interesting tension — [their words] alongside [other thing they said]..."
+   - "Something you just described — [phrase] — most people never name that."
+   - "What I'm hearing underneath that is [core insight]..."
+   DO NOT start every response with "What I'm hearing is that..." — this breaks the human quality of the conversation.
 2. CONFIRM or weave into next question naturally
 3. DEEPEN if surface answer: "And when you say [X], what do you mean specifically?"
 4. Ask the NEXT question — always numbered "**Question X of 8:**"
@@ -952,18 +960,49 @@ def chat():
 
     try:
         if mode == 'career':
-            # Count how many user messages exist in this thread (excluding current)
+            # Count how many user messages exist in this thread (including current)
             user_msg_count = Message.query.filter_by(
                 thread_id=thread.id, role='user'
             ).count()
-            # user_msg_count includes the message we just added
             question_number = min(user_msg_count, 8)
 
             messages = [{'role': 'system', 'content': name_prefix + CAREER_CLARITY_PROMPT}] + past
+
+            # ── SERVER-SIDE TRIGGER: Insight Card after Q4 ──
+            # When user has answered exactly 4 questions, inject a hard instruction
+            if user_msg_count == 4:
+                messages.append({
+                    'role': 'system',
+                    'content': (
+                        'SYSTEM TRIGGER: The user has just answered Question 4. '
+                        'You MUST now deliver the Insight Card as defined in the AFTER QUESTION 4 section. '
+                        'Do not ask Question 5 yet — deliver the insight card first, then end with Question 5 of 8. '
+                        'This is mandatory. Do not skip it.'
+                    )
+                })
+
+            # ── SERVER-SIDE TRIGGER: Full Report after Q8 ──
+            # When user has answered 8 or more questions, force the report
+            if user_msg_count >= 8:
+                messages.append({
+                    'role': 'system',
+                    'content': (
+                        'SYSTEM TRIGGER: The user has now answered all 8 questions. '
+                        'You MUST produce the complete Career Clarity Report RIGHT NOW. '
+                        'Use the exact structure defined in AFTER QUESTION 8 section: '
+                        'What I Heard → 3 Hidden Transferable Skills → LinkedIn Transformation Plan '
+                        '(headline options, about section, skills, featured section) → '
+                        '90-Day Career Clarity Roadmap (Week 1-2, Week 3-4, Month 2, Month 3) → '
+                        'Your Single Next Step → Upgrade CTA. '
+                        'Do NOT ask any more questions. Generate the full personalised report now. '
+                        'This is the $67 deliverable — make it exceptional.'
+                    )
+                })
+
             completion = client.chat.completions.create(
                 model='gpt-4o',
                 messages=messages,
-                max_tokens=3000,
+                max_tokens=4000,
                 temperature=0.75,
             )
             assistant_text = completion.choices[0].message.content
