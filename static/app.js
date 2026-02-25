@@ -46,6 +46,13 @@ const mainAppEl        = document.getElementById('mainApp');
 const authOverlayEl    = document.getElementById('authOverlay');
 const userNameEl       = document.getElementById('userNameDisplay');
 const logoutBtn        = document.getElementById('logoutBtn');
+const headerRight      = document.getElementById('headerRight');
+
+// ── File Upload ──
+const fileInput        = document.getElementById('fileInput');
+const fileChipsEl      = document.getElementById('fileChips');
+const inputAreaEl      = document.getElementById('inputArea');
+let pendingFiles       = [];  // [{filename, content, is_image, base64_data}]
 
 // ── Auth: Login / Signup Panels ──
 const loginPanel    = document.getElementById('loginPanel');
@@ -135,6 +142,7 @@ function showApp(user) {
   userNameEl.textContent = firstName;
   const welcomeTitle = document.getElementById('welcomeTitle');
   if (welcomeTitle) welcomeTitle.textContent = `Hi, ${firstName}! How can I help?`;
+  updateHeader(user);
   loadThreads();
   // Show onboarding for brand-new users who haven't seen it yet
   if (user.has_seen_onboarding === false) {
@@ -146,6 +154,7 @@ function showAuth() {
   mainAppEl.style.display     = 'none';
   authOverlayEl.style.display = 'flex';
   currentUser = null;
+  updateHeader(null);
 }
 
 function showAuthError(el, msg) {
@@ -263,6 +272,96 @@ async function initAuth() {
   }
 }
 
+// ── Header Auth State ──
+function updateHeader(user) {
+  if (!headerRight) return;
+  if (user) {
+    const firstName = (user.name || '').split(' ')[0] || user.email;
+    headerRight.innerHTML = `
+      <span class="site-header-username">${firstName}</span>
+      <button class="site-header-auth-btn" id="headerLogoutBtn">Log Out</button>
+    `;
+    document.getElementById('headerLogoutBtn').addEventListener('click', async () => {
+      await fetch('/api/auth/logout', { method: 'POST' });
+      currentUser = null;
+      pendingFiles = [];
+      renderFileChips();
+      updateHeader(null);
+      showAuth();
+    });
+  } else {
+    headerRight.innerHTML = `
+      <button class="site-header-auth-btn" id="headerSignInBtn">Sign In</button>
+      <button class="site-header-auth-btn primary" id="headerSignUpBtn">Sign Up</button>
+    `;
+    document.getElementById('headerSignInBtn').addEventListener('click', () => {
+      showAuth(); document.getElementById('loginPanel').style.display = '';
+    });
+    document.getElementById('headerSignUpBtn').addEventListener('click', () => {
+      showAuth(); document.getElementById('signupPanel').style.display = '';
+    });
+  }
+}
+
+// ── File Upload ──
+async function uploadFile(file) {
+  const formData = new FormData();
+  formData.append('file', file);
+  try {
+    const res  = await fetch('/api/upload', { method: 'POST', body: formData });
+    const data = await res.json();
+    if (data.success) return data;
+    console.warn('Upload failed:', data.error);
+    return null;
+  } catch (e) {
+    console.warn('Upload error:', e);
+    return null;
+  }
+}
+
+function renderFileChips() {
+  if (!fileChipsEl) return;
+  fileChipsEl.innerHTML = pendingFiles.map((f, i) => `
+    <div class="file-chip">
+      <span title="${f.filename}">${f.is_image ? '🖼 ' : '📄 '}${f.filename}</span>
+      <span class="remove-chip" data-idx="${i}">×</span>
+    </div>
+  `).join('');
+  fileChipsEl.querySelectorAll('.remove-chip').forEach(btn => {
+    btn.addEventListener('click', () => {
+      pendingFiles.splice(parseInt(btn.dataset.idx), 1);
+      renderFileChips();
+    });
+  });
+}
+
+async function handleFileList(files) {
+  for (const file of files) {
+    const result = await uploadFile(file);
+    if (result) pendingFiles.push(result);
+  }
+  renderFileChips();
+}
+
+if (fileInput) {
+  fileInput.addEventListener('change', () => {
+    handleFileList(Array.from(fileInput.files));
+    fileInput.value = '';
+  });
+}
+
+// Drag-and-drop onto input area
+if (inputAreaEl) {
+  inputAreaEl.addEventListener('dragover', e => { e.preventDefault(); inputAreaEl.classList.add('drag-over'); });
+  inputAreaEl.addEventListener('dragleave', () => inputAreaEl.classList.remove('drag-over'));
+  inputAreaEl.addEventListener('drop', e => {
+    e.preventDefault();
+    inputAreaEl.classList.remove('drag-over');
+    const files = Array.from(e.dataTransfer.files);
+    if (files.length) handleFileList(files);
+  });
+}
+
 // ── Hamburger / Sidebar Toggle ──
 function openSidebar()  { sidebarEl.classList.add('open');    overlayEl.classList.add('active'); }
 function closeSidebar() { sidebarEl.classList.remove('open'); overlayEl.classList.remove('active'); }
@@ -378,10 +477,16 @@ function exportConversation() {
 // ── Send Message ──
 async function sendMessage() {
   const text = inputEl.value.trim();
-  if (!text || isLoading) return;
+  if ((!text && pendingFiles.length === 0) || isLoading) return;
 
   hideWelcome();
-  addMessage('user', text, currentMode);
+  const fileNames = pendingFiles.map(f => f.filename);
+  const displayText = text + (fileNames.length ? `\n\n📎 ${fileNames.join(', ')}` : '');
+  addMessage('user', displayText, currentMode);
+
+  const filesToSend = [...pendingFiles];
+  pendingFiles = [];
+  renderFileChips();
 
   inputEl.value = '';
   autoResize();
@@ -395,6 +500,7 @@ async function sendMessage() {
         message:   text,
         mode:      currentMode,
         thread_id: currentThreadId,
+        files:     filesToSend,
       }),
     });
 
