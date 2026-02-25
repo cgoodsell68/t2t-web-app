@@ -131,7 +131,10 @@ function showApp(user) {
   currentUser = user;
   authOverlayEl.style.display = 'none';
   mainAppEl.style.display     = 'flex';
-  userNameEl.textContent      = user.name || user.email;
+  const firstName = (user.name || '').split(' ')[0] || user.email;
+  userNameEl.textContent = firstName;
+  const welcomeTitle = document.getElementById('welcomeTitle');
+  if (welcomeTitle) welcomeTitle.textContent = `Hi, ${firstName}! How can I help?`;
   loadThreads();
   // Show onboarding for brand-new users who haven't seen it yet
   if (user.has_seen_onboarding === false) {
