@@ -399,7 +399,7 @@ Let's begin.
 
 Q1: What subject or level are you currently teaching — and what's the part of it that you love most?
 Q2: What first made you start thinking about a change? What was the moment, or the feeling?
-Q3: When you picture yourself in a corporate training role — what does it look like? What are you doing, who's in the room, how does it feel?
+Q3: When you picture yourself doing this kind of work outside the classroom — what does it look like? What are you doing, who's in the room, how does it feel?
 Q4: What's your biggest fear about making this transition?
 Q5: Have you ever trained adults outside the classroom — even informally, even once?
 Q6: What do people — colleagues, students, managers — consistently say you're great at?
