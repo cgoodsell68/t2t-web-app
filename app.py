@@ -415,15 +415,21 @@ Q8: If this transition goes perfectly — what does your life and work look like
 
 ─── YOUR METHOD AFTER EACH ANSWER ───
 
-1. REFLECT their language back using one of these openers — VARY them, never repeat the same one twice in a conversation:
-   - "There's something in what you just said — [their key phrase]..."
-   - "That word [X] — I want to come back to that..."
-   - "I notice you said [their words]. That matters."
-   - "Already I'm seeing [observation]..."
-   - "That's an interesting tension — [their words] alongside [other thing they said]..."
-   - "Something you just described — [phrase] — most people never name that."
-   - "What I'm hearing underneath that is [core insight]..."
-   DO NOT start every response with "What I'm hearing is that..." — this breaks the human quality of the conversation.
+⛔ BANNED PHRASE — NEVER USE IN ANY FORM: "What I'm hearing is that..." or any variation
+   starting with "What I'm hearing." This phrase is PROHIBITED in every response, no exceptions.
+   If you write it, delete it and choose from the approved openers below.
+
+1. REFLECT their language back using one of these APPROVED openers — rotate through them,
+   never use the same opener twice in a row:
+   - "There's something in what you just said — [their exact phrase]..."
+   - "That word [X] — I want to sit with that for a second..."
+   - "I notice you said [their words]. That matters more than you might think."
+   - "Already I'm seeing [specific observation about them]..."
+   - "That's a real tension — [their words] alongside [other thing they said]..."
+   - "Something you just described — [phrase] — most people never name that out loud."
+   - "You just said something important: [their exact words]."
+   - "[Their key word] — let me reflect that back..."
+   Always use THEIR words, not summaries or paraphrases.
 2. CONFIRM or weave into next question naturally
 3. DEEPEN if surface answer: "And when you say [X], what do you mean specifically?"
 4. Ask the NEXT question — always numbered "**Question X of 8:**"
@@ -485,7 +491,14 @@ After the user answers Q8, produce the complete report using this EXACT structur
 [3 specific headline options using their subject area and corporate language]
 
 ### About Section
-[Full ~150 word About section written in first person using StoryBrand: their journey, the problem they solve, who they serve, their unique credibility, a CTA]
+[Full ~150 word About section written in first person using StoryBrand structure:
+ Opening hook using their exact North Star vision from Q8 → 
+ The gap they noticed (their Q2 emotional driver, their words) → 
+ What they bring (their specific transferable strengths, named in corporate language) → 
+ Proof point (their real experience from Q5 — adult training they've done) → 
+ Who they serve and the result they create → 
+ CTA: "Let's connect if..." 
+ Use first person, conversational, not corporate-speak. Sound like a human, not a LinkedIn template.]
 
 ### Skills to Add to Your Profile
 [10 specific LinkedIn skills drawn from their background and the S.K.I.L.L.S. framework]
@@ -989,13 +1002,20 @@ def chat():
                     'content': (
                         'SYSTEM TRIGGER: The user has now answered all 8 questions. '
                         'You MUST produce the complete Career Clarity Report RIGHT NOW. '
-                        'Use the exact structure defined in AFTER QUESTION 8 section: '
+                        'START YOUR RESPONSE DIRECTLY with "# 🎯 Your Career Clarity Report" — '
+                        'do NOT add any reflection, summary, or preamble before this header. '
+                        'No "What I heard is that...", no "Based on our conversation...", '
+                        'no opener of any kind. Go straight to the report. '
+                        'Use the exact structure: '
                         'What I Heard → 3 Hidden Transferable Skills → LinkedIn Transformation Plan '
-                        '(headline options, about section, skills, featured section) → '
-                        '90-Day Career Clarity Roadmap (Week 1-2, Week 3-4, Month 2, Month 3) → '
-                        'Your Single Next Step → Upgrade CTA. '
-                        'Do NOT ask any more questions. Generate the full personalised report now. '
-                        'This is the $67 deliverable — make it exceptional.'
+                        '(3 headline options, full ~150 word About section in first person, '
+                        '10 LinkedIn skills, 3 Featured section ideas) → '
+                        '90-Day Career Clarity Roadmap (Week 1-2 Foundations, Week 3-4 Translation, '
+                        'Month 2 Application, Month 3 Positioning & Launch — 3-4 specific actions each) → '
+                        'Your Single Next Step (one specific action based on their timeline) → '
+                        'Upgrade CTA. '
+                        'Make every element specific to THIS person — use their exact words throughout. '
+                        'This is the $67 deliverable. Make it exceptional.'
                     )
                 })
 
