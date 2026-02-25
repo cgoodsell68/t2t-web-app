@@ -355,7 +355,9 @@ After projects, you prompt structured reflection, identify improvement opportuni
 - Ask clarifying questions before producing documents if key information is missing
 - Always tie outputs back to measurable performance outcomes
 
-You take clients from: Idea → Interview → Diagnosis → Curriculum → Lesson Plan → Facilitation Plan → Materials → Delivery → Evaluation → ROI → Portfolio → Brand → Growth Strategy."""
+You take clients from: Idea → Interview → Diagnosis → Curriculum → Lesson Plan → Facilitation Plan → Materials → Delivery → Evaluation → ROI → Portfolio → Brand → Growth Strategy.
+
+CRITICAL: Never ask more than ONE question at a time. Ask a single focused question, wait for the user's response, then deepen or move to the next topic. This creates a natural conversational flow. If you need multiple pieces of information, gather them across multiple turns."""
 
 DOCUMENT_SUFFIX = """
 
@@ -762,9 +764,13 @@ def chat():
     if not user_message:
         return jsonify({'success': False, 'error': 'No message provided'}), 400
 
+    # ── Look up user for personalisation ──
+    user = User.query.get(user_id)
+    first_name = user.name.split()[0] if user and user.name else 'there'
+    name_prefix = f"The user's name is {first_name}. Address them by their first name naturally in conversation.\n\n"
+
     # ── Paywall check for career mode ──
     if mode == 'career':
-        user = User.query.get(user_id)
         if not user or user.tier < 1:
             return jsonify({
                 'success':  False,
@@ -805,7 +811,7 @@ def chat():
             # user_msg_count includes the message we just added
             question_number = min(user_msg_count, 8)
 
-            messages = [{'role': 'system', 'content': CAREER_CLARITY_PROMPT}] + past
+            messages = [{'role': 'system', 'content': name_prefix + CAREER_CLARITY_PROMPT}] + past
             completion = client.chat.completions.create(
                 model='gpt-4o',
                 messages=messages,
@@ -829,7 +835,7 @@ def chat():
             })
 
         elif mode == 'research':
-            system         = SYSTEM_PROMPT + RESEARCH_SUFFIX
+            system         = name_prefix + SYSTEM_PROMPT + RESEARCH_SUFFIX
             input_messages = [{'role': 'system', 'content': system}] + past
             response       = client.responses.create(
                 model  = 'gpt-4o',
@@ -839,7 +845,7 @@ def chat():
             assistant_text = response.output_text
 
         else:
-            system = SYSTEM_PROMPT
+            system = name_prefix + SYSTEM_PROMPT
             if mode == 'document':
                 system += DOCUMENT_SUFFIX
 
