@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify, session, redirect
+from flask import Flask, render_template, request, jsonify, session, redirect, send_from_directory
 from flask_sqlalchemy import SQLAlchemy
 from openai import OpenAI
 from datetime import datetime
@@ -8,8 +8,11 @@ import requests as http_requests
 import stripe
 import smtplib
 import secrets
+import base64
+import mimetypes
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'change-this-in-production-please')
@@ -749,6 +752,102 @@ def delete_thread(thread_id):
 
 
 # ─────────────────────────────────────────────
+#  FILE UPLOAD CONFIG
+# ─────────────────────────────────────────────
+
+UPLOAD_FOLDER     = os.path.join(os.path.dirname(__file__), 'uploads')
+ALLOWED_EXTENSIONS = {'pdf', 'doc', 'docx', 'txt', 'png', 'jpg', 'jpeg', 'gif', 'csv', 'xlsx'}
+IMAGE_EXTENSIONS   = {'png', 'jpg', 'jpeg', 'gif'}
+MAX_FILE_SIZE      = 20 * 1024 * 1024  # 20 MB
+
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
+def extract_file_content(filepath, filename):
+    """Extract text content from uploaded file. Returns (content_str, is_image, base64_data)."""
+    ext = filename.rsplit('.', 1)[1].lower() if '.' in filename else ''
+
+    if ext in IMAGE_EXTENSIONS:
+        with open(filepath, 'rb') as f:
+            b64 = base64.b64encode(f.read()).decode('utf-8')
+        mime = mimetypes.guess_type(filepath)[0] or 'image/jpeg'
+        return None, True, f"data:{mime};base64,{b64}"
+
+    if ext == 'pdf':
+        try:
+            from pypdf import PdfReader
+            reader = PdfReader(filepath)
+            text = '\n'.join(page.extract_text() or '' for page in reader.pages)
+            return text[:15000], False, None
+        except Exception as e:
+            return f"[Could not extract PDF text: {e}]", False, None
+
+    if ext in ('doc', 'docx'):
+        try:
+            from docx import Document
+            doc = Document(filepath)
+            text = '\n'.join(p.text for p in doc.paragraphs)
+            return text[:15000], False, None
+        except Exception as e:
+            return f"[Could not extract Word doc text: {e}]", False, None
+
+    if ext == 'xlsx':
+        try:
+            import openpyxl
+            wb = openpyxl.load_workbook(filepath, read_only=True, data_only=True)
+            ws = wb.active
+            rows = []
+            for i, row in enumerate(ws.iter_rows(values_only=True)):
+                if i > 200:
+                    break
+                rows.append('\t'.join(str(c) if c is not None else '' for c in row))
+            return '\n'.join(rows)[:15000], False, None
+        except Exception as e:
+            return f"[Could not extract Excel data: {e}]", False, None
+
+    # txt, csv — plain text
+    try:
+        with open(filepath, 'r', encoding='utf-8', errors='replace') as f:
+            return f.read(15000), False, None
+    except Exception as e:
+        return f"[Could not read file: {e}]", False, None
+
+
+@app.route('/api/upload', methods=['POST'])
+@login_required
+def upload_file():
+    if 'file' not in request.files:
+        return jsonify({'success': False, 'error': 'No file provided'}), 400
+
+    file = request.files['file']
+    if not file.filename:
+        return jsonify({'success': False, 'error': 'Empty filename'}), 400
+    if not allowed_file(file.filename):
+        return jsonify({'success': False, 'error': 'File type not allowed'}), 400
+
+    filename   = secure_filename(file.filename)
+    file_id    = secrets.token_hex(8)
+    saved_name = f"{file_id}_{filename}"
+    filepath   = os.path.join(UPLOAD_FOLDER, saved_name)
+    file.save(filepath)
+
+    content, is_image, base64_data = extract_file_content(filepath, filename)
+
+    return jsonify({
+        'success':     True,
+        'file_id':     file_id,
+        'filename':    filename,
+        'is_image':    is_image,
+        'content':     content,
+        'base64_data': base64_data,
+    })
+
+
+# ─────────────────────────────────────────────
 #  ROUTES — CHAT
 # ─────────────────────────────────────────────
 
@@ -760,9 +859,13 @@ def chat():
     mode         = data.get('mode', 'chat')
     thread_id    = data.get('thread_id')      # None = start a new thread
     user_id      = session['user_id']
+    attached_files = data.get('files', [])   # [{filename, content, is_image, base64_data}]
+
+    if not user_message and not attached_files:
+        return jsonify({'success': False, 'error': 'No message provided'}), 400
 
     if not user_message:
-        return jsonify({'success': False, 'error': 'No message provided'}), 400
+        user_message = ''
 
     # ── Look up user for personalisation ──
     user = User.query.get(user_id)
@@ -801,6 +904,30 @@ def chat():
     history = Message.query.filter_by(thread_id=thread.id).order_by(Message.created_at).all()
     # Include up to last 20 messages (excluding the one we just added)
     past = [{'role': m.role, 'content': m.content} for m in history[-20:]]
+
+    # ── Build user content block (handles file attachments) ──
+    has_images   = any(f.get('is_image') for f in attached_files)
+    text_context = ''
+    for f in attached_files:
+        if not f.get('is_image') and f.get('content'):
+            text_context += f"\n\n[Attached file: {f['filename']}]\n{f['content']}"
+
+    if has_images:
+        # Vision-compatible content array
+        user_content = []
+        if user_message or text_context:
+            user_content.append({'type': 'text', 'text': (user_message + text_context).strip()})
+        for f in attached_files:
+            if f.get('is_image') and f.get('base64_data'):
+                user_content.append({'type': 'image_url', 'image_url': {'url': f['base64_data'], 'detail': 'auto'}})
+    else:
+        user_content = (user_message + text_context).strip()
+
+    # Replace last user message content with enriched version (files included)
+    if past and past[-1]['role'] == 'user':
+        past[-1]['content'] = user_content
+    elif user_content:
+        past.append({'role': 'user', 'content': user_content})
 
     try:
         if mode == 'career':
